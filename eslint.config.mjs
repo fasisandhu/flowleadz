@@ -40,6 +40,7 @@ const eslintConfig = [
       "lib/better-auth/**",
       "tests/fixtures/**",
       "tests/integration/**",
+      "tests/unit/**",
     ],
     rules: { "no-restricted-imports": "off" },
   },
