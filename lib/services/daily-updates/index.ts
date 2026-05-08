@@ -217,3 +217,21 @@ export async function getDailyUpdate(
   if (!row) return err("not_found", "Daily update not found");
   return ok(row);
 }
+
+type DailyUpdateRevision = typeof schema.dailyUpdateRevisions.$inferSelect;
+
+export async function listDailyUpdateRevisions(
+  db: AnyDb,
+  ctx: OrgContext,
+  dailyUpdateId: string,
+): Promise<Result<DailyUpdateRevision[]>> {
+  const access = await requireDailyUpdateRead(db, ctx, dailyUpdateId);
+  if (!access.ok) return access;
+
+  const rows = await db
+    .select()
+    .from(schema.dailyUpdateRevisions)
+    .where(eq(schema.dailyUpdateRevisions.dailyUpdateId, dailyUpdateId))
+    .orderBy(desc(schema.dailyUpdateRevisions.editedAt), desc(schema.dailyUpdateRevisions.id));
+  return ok(rows);
+}
