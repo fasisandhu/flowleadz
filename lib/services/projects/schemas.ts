@@ -28,3 +28,8 @@ export const updateProjectInputSchema = z.object({
   hourlyRateCents: positiveIntSchema.nullable().optional(),
 });
 export type UpdateProjectInput = z.infer<typeof updateProjectInputSchema>;
+
+export const listProjectsInputSchema = z.object({
+  status: projectStatusEnum.optional(),
+});
+export type ListProjectsInput = z.infer<typeof listProjectsInputSchema>;
