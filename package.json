@@ -12,8 +12,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx lib/db/migrate.ts",
+    "db:generate": "node --env-file=.env node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "tsx --env-file=.env lib/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push"
   },
