@@ -33,3 +33,9 @@ export const listProjectsInputSchema = z.object({
   status: projectStatusEnum.optional(),
 });
 export type ListProjectsInput = z.infer<typeof listProjectsInputSchema>;
+
+export const assignmentInputSchema = z.object({
+  projectId: idSchema,
+  userId: idSchema,
+});
+export type AssignmentInput = z.infer<typeof assignmentInputSchema>;

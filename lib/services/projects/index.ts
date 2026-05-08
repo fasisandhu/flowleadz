@@ -4,7 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireOrgAccess, requireProjectAccess, requireRole } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
-import { createProjectInputSchema, type CreateProjectInput, updateProjectInputSchema, type UpdateProjectInput, listProjectsInputSchema, type ListProjectsInput } from "./schemas";
+import { createProjectInputSchema, type CreateProjectInput, updateProjectInputSchema, type UpdateProjectInput, listProjectsInputSchema, type ListProjectsInput, assignmentInputSchema, type AssignmentInput } from "./schemas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -150,4 +150,75 @@ export async function getProject(
     return err("not_found", "Project not found");
   }
   return ok(row);
+}
+
+export async function assignToProject(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: AssignmentInput,
+): Promise<Result<true>> {
+  const parsed = assignmentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [project] = await db
+    .select({ id: schema.projects.id, orgId: schema.projects.orgId })
+    .from(schema.projects)
+    .where(eq(schema.projects.id, parsed.data.projectId))
+    .limit(1);
+  if (!project) return err("not_found", "Project not found");
+  if (project.orgId !== ctx.orgId) return err("not_found", "Project not found");
+
+  const [user] = await db
+    .select({ id: schema.users.id, systemRole: schema.users.systemRole })
+    .from(schema.users)
+    .where(eq(schema.users.id, parsed.data.userId))
+    .limit(1);
+  if (!user) return err("not_found", "User not found");
+  if (user.systemRole === "customer") {
+    return err("validation", "Only staff can be assigned to projects", {
+      fields: { userId: "Customers cannot be assigned" },
+    });
+  }
+
+  await db
+    .insert(schema.projectAssignments)
+    .values({ userId: parsed.data.userId, projectId: parsed.data.projectId })
+    .onConflictDoNothing();
+  return ok(true);
+}
+
+export async function unassignFromProject(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: AssignmentInput,
+): Promise<Result<true>> {
+  const parsed = assignmentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [project] = await db
+    .select({ id: schema.projects.id, orgId: schema.projects.orgId })
+    .from(schema.projects)
+    .where(eq(schema.projects.id, parsed.data.projectId))
+    .limit(1);
+  if (!project) return err("not_found", "Project not found");
+  if (project.orgId !== ctx.orgId) return err("not_found", "Project not found");
+
+  await db
+    .delete(schema.projectAssignments)
+    .where(
+      and(
+        eq(schema.projectAssignments.projectId, parsed.data.projectId),
+        eq(schema.projectAssignments.userId, parsed.data.userId),
+      ),
+    );
+  return ok(true);
 }
