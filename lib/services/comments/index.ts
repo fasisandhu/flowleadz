@@ -5,7 +5,7 @@ import { err, ok, type Result } from "@/lib/services/_result";
 import { requireCommentWrite } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import type { OrgContext } from "@/lib/services/_context";
-import { createCommentInputSchema, type CreateCommentInput, updateCommentInputSchema, type UpdateCommentInput } from "./schemas";
+import { createCommentInputSchema, type CreateCommentInput, updateCommentInputSchema, type UpdateCommentInput, softDeleteCommentInputSchema, type SoftDeleteCommentInput } from "./schemas";
 import { captureCommentRevision } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,4 +140,33 @@ export async function updateComment(
     .where(eq(schema.comments.id, parsed.data.id))
     .returning();
   return ok(row!);
+}
+
+export async function softDeleteComment(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: SoftDeleteCommentInput,
+): Promise<Result<true>> {
+  const parsed = softDeleteCommentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(schema.comments)
+    .where(eq(schema.comments.id, parsed.data.id))
+    .limit(1);
+  if (!existing) return err("not_found", "Comment not found");
+  if (existing.orgId !== ctx.orgId) return err("not_found", "Comment not found");
+
+  if (ctx.actor.role !== "admin" && existing.userId !== ctx.actor.userId) {
+    return err("unauthorized", "Only the author or an admin can delete this comment");
+  }
+
+  await db
+    .update(schema.comments)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(eq(schema.comments.id, parsed.data.id));
+  return ok(true);
 }

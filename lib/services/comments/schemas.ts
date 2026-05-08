@@ -14,3 +14,6 @@ export const updateCommentInputSchema = z
   })
   .strict();
 export type UpdateCommentInput = z.infer<typeof updateCommentInputSchema>;
+
+export const softDeleteCommentInputSchema = z.object({ id: idSchema });
+export type SoftDeleteCommentInput = z.infer<typeof softDeleteCommentInputSchema>;
