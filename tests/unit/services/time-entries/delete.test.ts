@@ -12,12 +12,12 @@ const ctxOf = (orgId: string, role: "customer" | "employee" | "admin", userId: s
   actor: { userId, role, membershipOrgId: role === "customer" ? orgId : null },
 });
 
-async function seedEntry(db: any, orgId: string, projectId: string, taskId: string, userId: string) {
+async function seedEntry(db: Parameters<typeof createUser>[0], orgId: string, projectId: string, taskId: string, userId: string) {
   const [row] = await db
     .insert(schema.timeEntries)
     .values({ orgId, projectId, taskId, userId, minutes: 60, loggedForDate: "2026-05-08" })
     .returning();
-  return row;
+  return row!;
 }
 
 describe("time-entries.deleteTimeEntry", () => {

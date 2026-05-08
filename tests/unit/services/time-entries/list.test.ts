@@ -11,7 +11,7 @@ const ctxOf = (orgId: string, role: "customer" | "employee" | "admin", userId: s
   actor: { userId, role, membershipOrgId: role === "customer" ? orgId : null },
 });
 
-async function seedEntry(db: any, orgId: string, projectId: string, taskId: string, userId: string, opts: any = {}) {
+async function seedEntry(db: Parameters<typeof createUser>[0], orgId: string, projectId: string, taskId: string, userId: string, opts: { minutes?: number; loggedForDate?: string; rateCentsPerHour?: number | null } = {}) {
   const [row] = await db
     .insert(schema.timeEntries)
     .values({
@@ -24,7 +24,7 @@ async function seedEntry(db: any, orgId: string, projectId: string, taskId: stri
       rateCentsPerHour: opts.rateCentsPerHour ?? null,
     })
     .returning();
-  return row;
+  return row!;
 }
 
 describe("time-entries.listTimeEntries", () => {
