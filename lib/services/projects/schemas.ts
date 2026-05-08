@@ -14,3 +14,17 @@ export const createProjectInputSchema = z.object({
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectInputSchema>;
+
+import { idSchema } from "@/lib/services/_schemas/common";
+
+export const updateProjectInputSchema = z.object({
+  id: idSchema,
+  name: nonEmptyStringSchema.max(200).optional(),
+  description: z.string().max(5000).nullable().optional(),
+  serviceType: serviceTypeEnum.optional(),
+  status: projectStatusEnum.optional(),
+  startDate: dateSchema.nullable().optional(),
+  endDate: dateSchema.nullable().optional(),
+  hourlyRateCents: positiveIntSchema.nullable().optional(),
+});
+export type UpdateProjectInput = z.infer<typeof updateProjectInputSchema>;
