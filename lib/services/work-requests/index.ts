@@ -6,7 +6,8 @@ import { requireOrgAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import { createFromRequest } from "@/lib/services/tasks";
 import type { OrgContext } from "@/lib/services/_context";
-import { submitWorkRequestInputSchema, type SubmitWorkRequestInput } from "./schemas";
+import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput } from "./schemas";
+import { requireRole } from "@/lib/services/_auth/predicates";
 import { logRequestStatusTransition } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,6 +95,96 @@ export async function submitWorkRequest(
       payload: {
         workRequestId: updated!.id,
         title: updated!.title,
+        actorId: ctx.actor.userId,
+      },
+      relatedType: "work_request",
+      relatedId: updated!.id,
+    });
+  }
+
+  return ok(updated!);
+}
+
+export async function acceptWorkRequest(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: AcceptWorkRequestInput,
+): Promise<Result<WorkRequest>> {
+  const parsed = acceptWorkRequestInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [request] = await db
+    .select()
+    .from(schema.workRequests)
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .limit(1);
+  if (!request) return err("not_found", "Work request not found");
+  if (request.orgId !== ctx.orgId) return err("not_found", "Work request not found");
+  if (request.status !== "submitted") {
+    return err("conflict", `Cannot accept a request with status '${request.status}'`);
+  }
+
+  let finalProjectId = request.projectId;
+  if (!finalProjectId) {
+    if (!parsed.data.projectId) {
+      return err("validation", "projectId is required when the request has no project", {
+        fields: { projectId: "Required to accept a triage request" },
+      });
+    }
+    const [project] = await db
+      .select({ id: schema.projects.id, orgId: schema.projects.orgId })
+      .from(schema.projects)
+      .where(eq(schema.projects.id, parsed.data.projectId))
+      .limit(1);
+    if (!project || project.orgId !== ctx.orgId) {
+      return err("not_found", "Project not found");
+    }
+    finalProjectId = parsed.data.projectId;
+  }
+
+  const [updated] = await db
+    .update(schema.workRequests)
+    .set({
+      status: "accepted",
+      projectId: finalProjectId,
+      reviewedBy: ctx.actor.userId,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .returning();
+
+  if (request.resolvedTaskId) {
+    const [task] = await db
+      .select({ id: schema.tasks.id, projectId: schema.tasks.projectId })
+      .from(schema.tasks)
+      .where(eq(schema.tasks.id, request.resolvedTaskId))
+      .limit(1);
+    if (task && !task.projectId) {
+      await db
+        .update(schema.tasks)
+        .set({ projectId: finalProjectId, updatedAt: new Date() })
+        .where(eq(schema.tasks.id, task.id));
+    }
+  }
+
+  await logRequestStatusTransition(db, parsed.data.id, "submitted", "accepted", ctx.actor.userId);
+
+  if (request.submittedBy !== ctx.actor.userId) {
+    await emit(db, {
+      orgId: ctx.orgId,
+      eventType: "work_request.status_changed",
+      recipientUserIds: [request.submittedBy],
+      payload: {
+        workRequestId: updated!.id,
+        title: updated!.title,
+        from: "submitted",
+        to: "accepted",
         actorId: ctx.actor.userId,
       },
       relatedType: "work_request",

@@ -11,3 +11,9 @@ export const submitWorkRequestInputSchema = z.object({
   priorityHint: priorityEnum.optional(),
 });
 export type SubmitWorkRequestInput = z.infer<typeof submitWorkRequestInputSchema>;
+
+export const acceptWorkRequestInputSchema = z.object({
+  id: idSchema,
+  projectId: idSchema.optional(),
+});
+export type AcceptWorkRequestInput = z.infer<typeof acceptWorkRequestInputSchema>;
