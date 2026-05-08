@@ -13,3 +13,15 @@ export const createTaskInputSchema = z.object({
   customerVisible: z.boolean().optional(),
 });
 export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
+
+export const updateTaskInputSchema = z
+  .object({
+    id: idSchema,
+    title: nonEmptyStringSchema.max(200).optional(),
+    description: z.string().max(10000).nullable().optional(),
+    priority: priorityEnum.optional(),
+    dueDate: dateSchema.nullable().optional(),
+    customerVisible: z.boolean().optional(),
+  })
+  .strict();
+export type UpdateTaskInput = z.infer<typeof updateTaskInputSchema>;

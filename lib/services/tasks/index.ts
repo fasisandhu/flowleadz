@@ -2,9 +2,9 @@ import { eq } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
-import { requireRole } from "@/lib/services/_auth/predicates";
+import { requireRole, requireTaskWrite } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
-import { createTaskInputSchema, type CreateTaskInput } from "./schemas";
+import { createTaskInputSchema, type CreateTaskInput, updateTaskInputSchema, type UpdateTaskInput } from "./schemas";
 import { logStatusTransition } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,4 +92,31 @@ export async function createFromRequest(db: AnyDb, input: CreateFromRequestInput
     .returning();
   await logStatusTransition(db, row!.id, null, "todo", input.createdBy);
   return row!;
+}
+
+export async function updateTask(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpdateTaskInput,
+): Promise<Result<Task>> {
+  const parsed = updateTaskInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const auth = await requireTaskWrite(db, ctx, parsed.data.id);
+  if (!auth.ok) return auth;
+
+  const updates: Partial<typeof schema.tasks.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.data.title !== undefined) updates.title = parsed.data.title;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+  if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
+  if (parsed.data.dueDate !== undefined) updates.dueDate = parsed.data.dueDate;
+  if (parsed.data.customerVisible !== undefined) updates.customerVisible = parsed.data.customerVisible;
+
+  const [row] = await db
+    .update(schema.tasks)
+    .set(updates)
+    .where(eq(schema.tasks.id, parsed.data.id))
+    .returning();
+  return ok(row!);
 }
