@@ -58,3 +58,81 @@ export function requireRole(ctx: AnyContext, role: SystemRole): Result<true> {
   if (ctx.actor.role !== role) return err("unauthorized", `Requires ${role} role`);
   return ok(true);
 }
+
+export async function requireTaskRead(
+  db: AnyDb,
+  ctx: OrgContext,
+  taskId: string,
+): Promise<Result<true>> {
+  const [task] = await db
+    .select({
+      id: schema.tasks.id,
+      orgId: schema.tasks.orgId,
+      projectId: schema.tasks.projectId,
+      customerVisible: schema.tasks.customerVisible,
+    })
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, taskId))
+    .limit(1);
+  if (!task) return err("not_found", "Task not found");
+  if (task.orgId !== ctx.orgId) return err("not_found", "Task not found");
+
+  if (ctx.actor.role === "admin") return ok(true);
+
+  if (ctx.actor.role === "customer") {
+    if (!task.customerVisible) return err("unauthorized", "Not visible to customers");
+    if (!task.projectId) return err("unauthorized", "Task is not yet assigned to a project");
+    return requireOrgAccess(db, ctx);
+  }
+
+  // employee
+  if (!task.projectId) return err("unauthorized", "Task is in triage queue");
+  const assigned = await db
+    .select({ projectId: schema.projectAssignments.projectId })
+    .from(schema.projectAssignments)
+    .where(
+      and(
+        eq(schema.projectAssignments.userId, ctx.actor.userId),
+        eq(schema.projectAssignments.projectId, task.projectId),
+      ),
+    )
+    .limit(1);
+  if (assigned.length === 0) return err("unauthorized", "Not assigned to this project");
+  return ok(true);
+}
+
+export async function requireTaskWrite(
+  db: AnyDb,
+  ctx: OrgContext,
+  taskId: string,
+): Promise<Result<true>> {
+  if (ctx.actor.role === "customer") return err("unauthorized", "Customers cannot write tasks");
+
+  const [task] = await db
+    .select({
+      id: schema.tasks.id,
+      orgId: schema.tasks.orgId,
+      projectId: schema.tasks.projectId,
+    })
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, taskId))
+    .limit(1);
+  if (!task) return err("not_found", "Task not found");
+  if (task.orgId !== ctx.orgId) return err("not_found", "Task not found");
+
+  if (ctx.actor.role === "admin") return ok(true);
+
+  if (!task.projectId) return err("unauthorized", "Task is in triage queue");
+  const assigned = await db
+    .select({ projectId: schema.projectAssignments.projectId })
+    .from(schema.projectAssignments)
+    .where(
+      and(
+        eq(schema.projectAssignments.userId, ctx.actor.userId),
+        eq(schema.projectAssignments.projectId, task.projectId),
+      ),
+    )
+    .limit(1);
+  if (assigned.length === 0) return err("unauthorized", "Not assigned to this project");
+  return ok(true);
+}

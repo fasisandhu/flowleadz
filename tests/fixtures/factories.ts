@@ -65,3 +65,25 @@ export async function createProject(
 export async function assignProject(db: TestDb, userId: string, projectId: string) {
   await db.insert(schema.projectAssignments).values({ userId, projectId });
 }
+
+export async function createTask(
+  db: TestDb,
+  orgId: string,
+  projectId: string,
+  createdBy: string,
+  overrides: Partial<typeof schema.tasks.$inferInsert> = {},
+) {
+  const [row] = await db
+    .insert(schema.tasks)
+    .values({
+      orgId,
+      projectId,
+      title: "Test task",
+      source: "admin_created",
+      createdBy,
+      customerVisible: true,
+      ...overrides,
+    })
+    .returning();
+  return row!;
+}
