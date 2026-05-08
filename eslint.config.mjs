@@ -33,6 +33,7 @@ const eslintConfig = [
     files: [
       "lib/services/**",
       "lib/db/**",
+      "lib/better-auth/**",
       "tests/fixtures/**",
       "tests/integration/**",
     ],
