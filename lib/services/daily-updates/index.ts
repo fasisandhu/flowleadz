@@ -5,7 +5,13 @@ import { err, ok, type Result } from "@/lib/services/_result";
 import { requireProjectAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import type { OrgContext } from "@/lib/services/_context";
-import { createDailyUpdateInputSchema, type CreateDailyUpdateInput } from "./schemas";
+import { captureRevision } from "./internal";
+import {
+  createDailyUpdateInputSchema,
+  type CreateDailyUpdateInput,
+  updateDailyUpdateInputSchema,
+  type UpdateDailyUpdateInput,
+} from "./schemas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -109,5 +115,54 @@ export async function createDailyUpdate(
     });
   }
 
+  return ok(row!);
+}
+
+export async function updateDailyUpdate(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpdateDailyUpdateInput,
+): Promise<Result<DailyUpdate>> {
+  const parsed = updateDailyUpdateInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  if (ctx.actor.role === "customer") {
+    return err("unauthorized", "Customers cannot edit updates");
+  }
+
+  const [existing] = await db
+    .select()
+    .from(schema.dailyUpdates)
+    .where(eq(schema.dailyUpdates.id, parsed.data.id))
+    .limit(1);
+  if (!existing) return err("not_found", "Daily update not found");
+  if (existing.orgId !== ctx.orgId) return err("not_found", "Daily update not found");
+
+  if (ctx.actor.role !== "admin" && existing.userId !== ctx.actor.userId) {
+    return err("unauthorized", "Only the author or an admin can edit this update");
+  }
+
+  const noopBody = parsed.data.body === undefined || parsed.data.body === existing.body;
+  const noopActivity =
+    parsed.data.activityType === undefined || parsed.data.activityType === existing.activityType;
+  const noopVisibility =
+    parsed.data.visibility === undefined || parsed.data.visibility === existing.visibility;
+  if (noopBody && noopActivity && noopVisibility) {
+    return ok(existing);
+  }
+
+  await captureRevision(db, existing, ctx.actor.userId);
+
+  const updates: Partial<typeof schema.dailyUpdates.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.data.body !== undefined) updates.body = parsed.data.body;
+  if (parsed.data.activityType !== undefined) updates.activityType = parsed.data.activityType;
+  if (parsed.data.visibility !== undefined) updates.visibility = parsed.data.visibility;
+
+  const [row] = await db
+    .update(schema.dailyUpdates)
+    .set(updates)
+    .where(eq(schema.dailyUpdates.id, parsed.data.id))
+    .returning();
   return ok(row!);
 }

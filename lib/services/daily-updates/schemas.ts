@@ -26,3 +26,13 @@ export const createDailyUpdateInputSchema = z.object({
   taskIds: z.array(idSchema).optional(),
 });
 export type CreateDailyUpdateInput = z.infer<typeof createDailyUpdateInputSchema>;
+
+export const updateDailyUpdateInputSchema = z
+  .object({
+    id: idSchema,
+    body: nonEmptyStringSchema.max(20000).optional(),
+    activityType: activityTypeEnum.optional(),
+    visibility: updateVisibilityEnum.optional(),
+  })
+  .strict();
+export type UpdateDailyUpdateInput = z.infer<typeof updateDailyUpdateInputSchema>;
