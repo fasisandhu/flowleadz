@@ -6,3 +6,11 @@ export const createCommentInputSchema = z.object({
   body: nonEmptyStringSchema.max(10000),
 });
 export type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
+
+export const updateCommentInputSchema = z
+  .object({
+    id: idSchema,
+    body: nonEmptyStringSchema.max(10000),
+  })
+  .strict();
+export type UpdateCommentInput = z.infer<typeof updateCommentInputSchema>;

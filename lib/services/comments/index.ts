@@ -5,7 +5,7 @@ import { err, ok, type Result } from "@/lib/services/_result";
 import { requireCommentWrite } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import type { OrgContext } from "@/lib/services/_context";
-import { createCommentInputSchema, type CreateCommentInput } from "./schemas";
+import { createCommentInputSchema, type CreateCommentInput, updateCommentInputSchema, type UpdateCommentInput } from "./schemas";
 import { captureCommentRevision } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,3 +104,40 @@ export async function createComment(
 }
 
 export { captureCommentRevision };
+
+export async function updateComment(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpdateCommentInput,
+): Promise<Result<Comment>> {
+  const parsed = updateCommentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(schema.comments)
+    .where(eq(schema.comments.id, parsed.data.id))
+    .limit(1);
+  if (!existing) return err("not_found", "Comment not found");
+  if (existing.orgId !== ctx.orgId) return err("not_found", "Comment not found");
+  if (existing.deletedAt) return err("not_found", "Comment not found");
+
+  if (ctx.actor.role !== "admin" && existing.userId !== ctx.actor.userId) {
+    return err("unauthorized", "Only the author or an admin can edit this comment");
+  }
+
+  if (parsed.data.body === existing.body) {
+    return ok(existing);
+  }
+
+  await captureCommentRevision(db, existing, ctx.actor.userId);
+
+  const [row] = await db
+    .update(schema.comments)
+    .set({ body: parsed.data.body, updatedAt: new Date() })
+    .where(eq(schema.comments.id, parsed.data.id))
+    .returning();
+  return ok(row!);
+}
