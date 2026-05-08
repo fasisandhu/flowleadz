@@ -4,7 +4,8 @@ import { z } from "zod";
 // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 // Better Auth format: prefix_alphanumeric (e.g. usr_abc123, team_xyz)
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const betterAuthIdPattern = /^[a-z]+_[a-zA-Z0-9]+$/;
+// Allow hyphens in the suffix so test-factory IDs like "usr_1715301244-3" are accepted.
+const betterAuthIdPattern = /^[a-z]+_[a-zA-Z0-9-]+$/;
 
 export const idSchema = z.string().refine(
   (s) => uuidPattern.test(s) || betterAuthIdPattern.test(s),
