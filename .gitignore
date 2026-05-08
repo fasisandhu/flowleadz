@@ -45,6 +45,9 @@ Thumbs.db
 # SpecStory local metadata
 .specstory/
 
+# Claude Code local session settings
+.claude/
+
 # Local database state
 postgres-data/
 *.db
