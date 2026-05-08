@@ -1,10 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireProjectAccess } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
-import { logTimeInputSchema, type LogTimeInput } from "./schemas";
+import { logTimeInputSchema, type LogTimeInput, listTimeEntriesInputSchema, type ListTimeEntriesInput } from "./schemas";
 import { resolveRate } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -63,4 +63,40 @@ export async function logTime(
     })
     .returning();
   return ok(row!);
+}
+
+export async function listTimeEntries(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListTimeEntriesInput,
+): Promise<Result<TimeEntry[]>> {
+  const parsed = listTimeEntriesInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  if (ctx.actor.role === "customer") return err("unauthorized", "Customers cannot view time entries");
+
+  const conditions = [eq(schema.timeEntries.orgId, ctx.orgId)];
+  if (parsed.data.projectId) conditions.push(eq(schema.timeEntries.projectId, parsed.data.projectId));
+  if (parsed.data.taskId) conditions.push(eq(schema.timeEntries.taskId, parsed.data.taskId));
+  if (parsed.data.userId) conditions.push(eq(schema.timeEntries.userId, parsed.data.userId));
+  if (parsed.data.fromDate) conditions.push(gte(schema.timeEntries.loggedForDate, parsed.data.fromDate));
+  if (parsed.data.toDate) conditions.push(lte(schema.timeEntries.loggedForDate, parsed.data.toDate));
+
+  if (ctx.actor.role === "employee") {
+    const assigned = await db
+      .select({ projectId: schema.projectAssignments.projectId })
+      .from(schema.projectAssignments)
+      .where(eq(schema.projectAssignments.userId, ctx.actor.userId));
+    const ids = assigned.map((r) => r.projectId);
+    if (ids.length === 0) return ok([]);
+    conditions.push(inArray(schema.timeEntries.projectId, ids));
+  }
+
+  const rows = await db
+    .select()
+    .from(schema.timeEntries)
+    .where(and(...conditions))
+    .orderBy(schema.timeEntries.loggedForDate, schema.timeEntries.createdAt);
+  return ok(rows);
 }

@@ -8,3 +8,12 @@ export const logTimeInputSchema = z.object({
   note: z.string().max(2000).optional(),
 });
 export type LogTimeInput = z.infer<typeof logTimeInputSchema>;
+
+export const listTimeEntriesInputSchema = z.object({
+  projectId: idSchema.optional(),
+  taskId: idSchema.optional(),
+  userId: idSchema.optional(),
+  fromDate: dateSchema.optional(),
+  toDate: dateSchema.optional(),
+});
+export type ListTimeEntriesInput = z.infer<typeof listTimeEntriesInputSchema>;
