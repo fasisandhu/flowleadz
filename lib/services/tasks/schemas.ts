@@ -49,3 +49,9 @@ export const taskAssignmentInputSchema = z.object({
   userId: idSchema,
 });
 export type TaskAssignmentInput = z.infer<typeof taskAssignmentInputSchema>;
+
+export const listTasksInputSchema = z.object({
+  status: taskStatusEnum.optional(),
+  projectId: idSchema.optional(),
+});
+export type ListTasksInput = z.infer<typeof listTasksInputSchema>;

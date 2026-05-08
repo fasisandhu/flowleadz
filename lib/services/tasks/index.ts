@@ -1,8 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
-import { requireRole, requireTaskWrite } from "@/lib/services/_auth/predicates";
+import { requireOrgAccess, requireRole, requireTaskRead, requireTaskWrite } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
 import { emit } from "@/lib/services/notifications";
 import {
@@ -11,6 +11,7 @@ import {
   changeTaskStatusInputSchema, type ChangeTaskStatusInput,
   ALLOWED_TASK_TRANSITIONS,
   taskAssignmentInputSchema, type TaskAssignmentInput,
+  listTasksInputSchema, type ListTasksInput,
 } from "./schemas";
 import { logStatusTransition } from "./internal";
 
@@ -286,4 +287,55 @@ export async function unassignTask(
       ),
     );
   return ok(true);
+}
+
+export async function listTasks(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListTasksInput,
+): Promise<Result<Task[]>> {
+  const parsed = listTasksInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const access = await requireOrgAccess(db, ctx);
+  if (!access.ok) return access;
+
+  const conditions = [eq(schema.tasks.orgId, ctx.orgId)];
+  if (parsed.data.status) conditions.push(eq(schema.tasks.status, parsed.data.status));
+  if (parsed.data.projectId) conditions.push(eq(schema.tasks.projectId, parsed.data.projectId));
+
+  if (ctx.actor.role === "customer") {
+    conditions.push(eq(schema.tasks.customerVisible, true));
+    conditions.push(isNotNull(schema.tasks.projectId));
+  }
+
+  if (ctx.actor.role === "employee") {
+    const assigned = await db
+      .select({ projectId: schema.projectAssignments.projectId })
+      .from(schema.projectAssignments)
+      .where(eq(schema.projectAssignments.userId, ctx.actor.userId));
+    const ids = assigned.map((r) => r.projectId);
+    if (ids.length === 0) return ok([]);
+    conditions.push(inArray(schema.tasks.projectId, ids));
+  }
+
+  const rows = await db
+    .select()
+    .from(schema.tasks)
+    .where(and(...conditions))
+    .orderBy(schema.tasks.createdAt);
+  return ok(rows);
+}
+
+export async function getTask(
+  db: AnyDb,
+  ctx: OrgContext,
+  taskId: string,
+): Promise<Result<Task>> {
+  const access = await requireTaskRead(db, ctx, taskId);
+  if (!access.ok) return access;
+  const [row] = await db.select().from(schema.tasks).where(eq(schema.tasks.id, taskId)).limit(1);
+  if (!row) return err("not_found", "Task not found");
+  return ok(row);
 }
