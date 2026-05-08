@@ -4,7 +4,16 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireProjectAccess } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
-import { logTimeInputSchema, type LogTimeInput, listTimeEntriesInputSchema, type ListTimeEntriesInput } from "./schemas";
+import {
+  logTimeInputSchema,
+  type LogTimeInput,
+  listTimeEntriesInputSchema,
+  type ListTimeEntriesInput,
+  updateTimeEntryInputSchema,
+  type UpdateTimeEntryInput,
+  deleteTimeEntryInputSchema,
+  type DeleteTimeEntryInput,
+} from "./schemas";
 import { resolveRate } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,4 +108,67 @@ export async function listTimeEntries(
     .where(and(...conditions))
     .orderBy(schema.timeEntries.loggedForDate, schema.timeEntries.createdAt);
   return ok(rows);
+}
+
+export async function updateTimeEntry(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpdateTimeEntryInput,
+): Promise<Result<TimeEntry>> {
+  const parsed = updateTimeEntryInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  if (ctx.actor.role === "customer") return err("unauthorized", "Customers cannot update time entries");
+
+  const [entry] = await db
+    .select()
+    .from(schema.timeEntries)
+    .where(eq(schema.timeEntries.id, parsed.data.id))
+    .limit(1);
+  if (!entry) return err("not_found", "Time entry not found");
+  if (entry.orgId !== ctx.orgId) return err("not_found", "Time entry not found");
+
+  if (ctx.actor.role !== "admin" && entry.userId !== ctx.actor.userId) {
+    return err("unauthorized", "Only the owner or an admin can update this entry");
+  }
+
+  const updates: Partial<typeof schema.timeEntries.$inferInsert> = { updatedAt: new Date() };
+  if (parsed.data.minutes !== undefined) updates.minutes = parsed.data.minutes;
+  if (parsed.data.loggedForDate !== undefined) updates.loggedForDate = parsed.data.loggedForDate;
+  if (parsed.data.note !== undefined) updates.note = parsed.data.note;
+
+  const [row] = await db
+    .update(schema.timeEntries)
+    .set(updates)
+    .where(eq(schema.timeEntries.id, parsed.data.id))
+    .returning();
+  return ok(row!);
+}
+
+export async function deleteTimeEntry(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: DeleteTimeEntryInput,
+): Promise<Result<true>> {
+  const parsed = deleteTimeEntryInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  if (ctx.actor.role === "customer") return err("unauthorized", "Customers cannot delete time entries");
+
+  const [entry] = await db
+    .select()
+    .from(schema.timeEntries)
+    .where(eq(schema.timeEntries.id, parsed.data.id))
+    .limit(1);
+  if (!entry) return err("not_found", "Time entry not found");
+  if (entry.orgId !== ctx.orgId) return err("not_found", "Time entry not found");
+
+  if (ctx.actor.role !== "admin" && entry.userId !== ctx.actor.userId) {
+    return err("unauthorized", "Only the owner or an admin can delete this entry");
+  }
+
+  await db.delete(schema.timeEntries).where(eq(schema.timeEntries.id, parsed.data.id));
+  return ok(true);
 }
