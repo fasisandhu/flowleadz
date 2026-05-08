@@ -4,7 +4,13 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireRole, requireTaskWrite } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
-import { createTaskInputSchema, type CreateTaskInput, updateTaskInputSchema, type UpdateTaskInput } from "./schemas";
+import { emit } from "@/lib/services/notifications";
+import {
+  createTaskInputSchema, type CreateTaskInput,
+  updateTaskInputSchema, type UpdateTaskInput,
+  changeTaskStatusInputSchema, type ChangeTaskStatusInput,
+  ALLOWED_TASK_TRANSITIONS,
+} from "./schemas";
 import { logStatusTransition } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -119,4 +125,81 @@ export async function updateTask(
     .where(eq(schema.tasks.id, parsed.data.id))
     .returning();
   return ok(row!);
+}
+
+export async function changeTaskStatus(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ChangeTaskStatusInput,
+): Promise<Result<Task>> {
+  const parsed = changeTaskStatusInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const auth = await requireTaskWrite(db, ctx, parsed.data.id);
+  if (!auth.ok) return auth;
+
+  const [task] = await db
+    .select()
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, parsed.data.id))
+    .limit(1);
+  if (!task) return err("not_found", "Task not found");
+
+  if (task.status === parsed.data.toStatus) return ok(task);
+
+  const allowed = ALLOWED_TASK_TRANSITIONS[task.status as keyof typeof ALLOWED_TASK_TRANSITIONS] ?? [];
+  if (!allowed.includes(parsed.data.toStatus)) {
+    return err("validation", `Cannot transition from ${task.status} to ${parsed.data.toStatus}`, {
+      fields: { toStatus: "illegal transition" },
+    });
+  }
+
+  const statusUpdates: Partial<typeof schema.tasks.$inferInsert> = {
+    status: parsed.data.toStatus,
+    updatedAt: new Date(),
+  };
+  if (parsed.data.toStatus === "done") statusUpdates.completedAt = new Date();
+  if (task.status === "done" && parsed.data.toStatus !== "done") statusUpdates.completedAt = null;
+
+  const [updated] = await db
+    .update(schema.tasks)
+    .set(statusUpdates)
+    .where(eq(schema.tasks.id, parsed.data.id))
+    .returning();
+  await logStatusTransition(db, updated!.id, task.status, parsed.data.toStatus, ctx.actor.userId, parsed.data.note);
+
+  // Emit: assignees + (if customer-visible) customers in org. Exclude actor.
+  const assignees = await db
+    .select({ userId: schema.taskAssignments.userId })
+    .from(schema.taskAssignments)
+    .where(eq(schema.taskAssignments.taskId, parsed.data.id));
+  const recipientIds = new Set<string>(assignees.map((a) => a.userId));
+  if (updated!.customerVisible) {
+    const customers = await db
+      .select({ userId: schema.members.userId })
+      .from(schema.members)
+      .where(eq(schema.members.organizationId, ctx.orgId));
+    customers.forEach((c) => recipientIds.add(c.userId));
+  }
+  recipientIds.delete(ctx.actor.userId);
+  if (recipientIds.size > 0) {
+    await emit(db, {
+      orgId: ctx.orgId,
+      eventType: "task.status_changed",
+      recipientUserIds: Array.from(recipientIds),
+      payload: {
+        taskId: updated!.id,
+        title: updated!.title,
+        from: task.status,
+        to: parsed.data.toStatus,
+        actorId: ctx.actor.userId,
+      },
+      relatedType: "task",
+      relatedId: updated!.id,
+    });
+  }
+
+  return ok(updated!);
 }

@@ -25,3 +25,21 @@ export const updateTaskInputSchema = z
   })
   .strict();
 export type UpdateTaskInput = z.infer<typeof updateTaskInputSchema>;
+
+export const changeTaskStatusInputSchema = z.object({
+  id: idSchema,
+  toStatus: taskStatusEnum,
+  note: z.string().max(500).optional(),
+});
+export type ChangeTaskStatusInput = z.infer<typeof changeTaskStatusInputSchema>;
+
+export const ALLOWED_TASK_TRANSITIONS: Record<
+  z.infer<typeof taskStatusEnum>,
+  z.infer<typeof taskStatusEnum>[]
+> = {
+  todo: ["in_progress", "blocked", "cancelled", "done"],
+  in_progress: ["todo", "blocked", "done", "cancelled"],
+  blocked: ["todo", "in_progress", "cancelled"],
+  done: ["in_progress"],
+  cancelled: ["todo"],
+};
