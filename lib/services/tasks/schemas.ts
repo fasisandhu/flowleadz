@@ -43,3 +43,9 @@ export const ALLOWED_TASK_TRANSITIONS: Record<
   done: ["in_progress"],
   cancelled: ["todo"],
 };
+
+export const taskAssignmentInputSchema = z.object({
+  taskId: idSchema,
+  userId: idSchema,
+});
+export type TaskAssignmentInput = z.infer<typeof taskAssignmentInputSchema>;

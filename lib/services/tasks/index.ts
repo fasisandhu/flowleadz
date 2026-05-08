@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
@@ -10,6 +10,7 @@ import {
   updateTaskInputSchema, type UpdateTaskInput,
   changeTaskStatusInputSchema, type ChangeTaskStatusInput,
   ALLOWED_TASK_TRANSITIONS,
+  taskAssignmentInputSchema, type TaskAssignmentInput,
 } from "./schemas";
 import { logStatusTransition } from "./internal";
 
@@ -202,4 +203,87 @@ export async function changeTaskStatus(
   }
 
   return ok(updated!);
+}
+
+export async function assignTask(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: TaskAssignmentInput,
+): Promise<Result<true>> {
+  const parsed = taskAssignmentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const auth = await requireTaskWrite(db, ctx, parsed.data.taskId);
+  if (!auth.ok) return auth;
+
+  const [user] = await db
+    .select({ id: schema.users.id, systemRole: schema.users.systemRole })
+    .from(schema.users)
+    .where(eq(schema.users.id, parsed.data.userId))
+    .limit(1);
+  if (!user) return err("not_found", "User not found");
+  if (user.systemRole === "customer") {
+    return err("validation", "Cannot assign tasks to customers", { fields: { userId: "Customers cannot be assigned" } });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(schema.taskAssignments)
+    .where(
+      and(
+        eq(schema.taskAssignments.taskId, parsed.data.taskId),
+        eq(schema.taskAssignments.userId, parsed.data.userId),
+      ),
+    )
+    .limit(1);
+  if (existing) return ok(true);
+
+  await db
+    .insert(schema.taskAssignments)
+    .values({ taskId: parsed.data.taskId, userId: parsed.data.userId });
+
+  const [task] = await db
+    .select({ title: schema.tasks.title })
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, parsed.data.taskId))
+    .limit(1);
+
+  await emit(db, {
+    orgId: ctx.orgId,
+    eventType: "task.assigned",
+    recipientUserIds: [parsed.data.userId],
+    payload: {
+      taskId: parsed.data.taskId,
+      title: task?.title ?? "(unknown)",
+      actorId: ctx.actor.userId,
+    },
+    relatedType: "task",
+    relatedId: parsed.data.taskId,
+  });
+
+  return ok(true);
+}
+
+export async function unassignTask(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: TaskAssignmentInput,
+): Promise<Result<true>> {
+  const parsed = taskAssignmentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const auth = await requireTaskWrite(db, ctx, parsed.data.taskId);
+  if (!auth.ok) return auth;
+
+  await db
+    .delete(schema.taskAssignments)
+    .where(
+      and(
+        eq(schema.taskAssignments.taskId, parsed.data.taskId),
+        eq(schema.taskAssignments.userId, parsed.data.userId),
+      ),
+    );
+  return ok(true);
 }
