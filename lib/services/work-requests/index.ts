@@ -6,7 +6,7 @@ import { requireOrgAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import { createFromRequest } from "@/lib/services/tasks";
 import type { OrgContext } from "@/lib/services/_context";
-import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput } from "./schemas";
+import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput } from "./schemas";
 import { requireRole } from "@/lib/services/_auth/predicates";
 import { logRequestStatusTransition } from "./internal";
 
@@ -185,6 +185,95 @@ export async function acceptWorkRequest(
         title: updated!.title,
         from: "submitted",
         to: "accepted",
+        actorId: ctx.actor.userId,
+      },
+      relatedType: "work_request",
+      relatedId: updated!.id,
+    });
+  }
+
+  return ok(updated!);
+}
+
+async function cancelLinkedTask(
+  db: AnyDb,
+  taskId: string,
+  changedBy: string,
+  note: string,
+) {
+  const [task] = await db
+    .select({ status: schema.tasks.status })
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, taskId))
+    .limit(1);
+  if (!task) return;
+  if (task.status === "cancelled") return;
+  await db
+    .update(schema.tasks)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(eq(schema.tasks.id, taskId));
+  await db.insert(schema.taskStatusLog).values({
+    taskId,
+    fromStatus: task.status,
+    toStatus: "cancelled",
+    changedBy,
+    note,
+  });
+}
+
+export async function rejectWorkRequest(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: RejectWorkRequestInput,
+): Promise<Result<WorkRequest>> {
+  const parsed = rejectWorkRequestInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [request] = await db
+    .select()
+    .from(schema.workRequests)
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .limit(1);
+  if (!request) return err("not_found", "Work request not found");
+  if (request.orgId !== ctx.orgId) return err("not_found", "Work request not found");
+  if (request.status !== "submitted") {
+    return err("conflict", `Cannot reject a request with status '${request.status}'`);
+  }
+
+  const [updated] = await db
+    .update(schema.workRequests)
+    .set({
+      status: "rejected",
+      rejectionReason: parsed.data.reason,
+      reviewedBy: ctx.actor.userId,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .returning();
+
+  if (request.resolvedTaskId) {
+    await cancelLinkedTask(db, request.resolvedTaskId, ctx.actor.userId, `Request rejected: ${parsed.data.reason}`);
+  }
+
+  await logRequestStatusTransition(db, parsed.data.id, "submitted", "rejected", ctx.actor.userId, parsed.data.reason);
+
+  if (request.submittedBy !== ctx.actor.userId) {
+    await emit(db, {
+      orgId: ctx.orgId,
+      eventType: "work_request.status_changed",
+      recipientUserIds: [request.submittedBy],
+      payload: {
+        workRequestId: updated!.id,
+        title: updated!.title,
+        from: "submitted",
+        to: "rejected",
+        reason: parsed.data.reason,
         actorId: ctx.actor.userId,
       },
       relatedType: "work_request",

@@ -17,3 +17,9 @@ export const acceptWorkRequestInputSchema = z.object({
   projectId: idSchema.optional(),
 });
 export type AcceptWorkRequestInput = z.infer<typeof acceptWorkRequestInputSchema>;
+
+export const rejectWorkRequestInputSchema = z.object({
+  id: idSchema,
+  reason: nonEmptyStringSchema.max(2000),
+});
+export type RejectWorkRequestInput = z.infer<typeof rejectWorkRequestInputSchema>;
