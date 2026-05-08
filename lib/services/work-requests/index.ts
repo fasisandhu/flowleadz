@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
@@ -6,7 +6,7 @@ import { requireOrgAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import { createFromRequest } from "@/lib/services/tasks";
 import type { OrgContext } from "@/lib/services/_context";
-import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput, markDuplicateWorkRequestInputSchema, type MarkDuplicateWorkRequestInput } from "./schemas";
+import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput, markDuplicateWorkRequestInputSchema, type MarkDuplicateWorkRequestInput, listWorkRequestsInputSchema, type ListWorkRequestsInput } from "./schemas";
 import { requireRole } from "@/lib/services/_auth/predicates";
 import { logRequestStatusTransition } from "./internal";
 
@@ -357,4 +357,59 @@ export async function markDuplicateWorkRequest(
   }
 
   return ok(updated!);
+}
+
+export async function listWorkRequests(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListWorkRequestsInput,
+): Promise<Result<WorkRequest[]>> {
+  const parsed = listWorkRequestsInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const access = await requireOrgAccess(db, ctx);
+  if (!access.ok) return access;
+
+  const conditions = [eq(schema.workRequests.orgId, ctx.orgId)];
+  if (parsed.data.status) conditions.push(eq(schema.workRequests.status, parsed.data.status));
+
+  if (ctx.actor.role === "employee") {
+    const assigned = await db
+      .select({ projectId: schema.projectAssignments.projectId })
+      .from(schema.projectAssignments)
+      .where(eq(schema.projectAssignments.userId, ctx.actor.userId));
+    const ids = assigned.map((r) => r.projectId);
+    if (ids.length === 0) {
+      conditions.push(isNull(schema.workRequests.projectId));
+    } else {
+      conditions.push(
+        or(isNull(schema.workRequests.projectId), inArray(schema.workRequests.projectId, ids))!,
+      );
+    }
+  }
+
+  const rows = await db
+    .select()
+    .from(schema.workRequests)
+    .where(and(...conditions))
+    .orderBy(desc(schema.workRequests.createdAt));
+  return ok(rows);
+}
+
+export async function getWorkRequest(
+  db: AnyDb,
+  ctx: OrgContext,
+  id: string,
+): Promise<Result<WorkRequest>> {
+  const access = await requireOrgAccess(db, ctx);
+  if (!access.ok) return access;
+  const [row] = await db
+    .select()
+    .from(schema.workRequests)
+    .where(eq(schema.workRequests.id, id))
+    .limit(1);
+  if (!row) return err("not_found", "Work request not found");
+  if (row.orgId !== ctx.orgId) return err("not_found", "Work request not found");
+  return ok(row);
 }

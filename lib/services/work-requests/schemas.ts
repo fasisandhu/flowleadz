@@ -29,3 +29,8 @@ export const markDuplicateWorkRequestInputSchema = z.object({
   canonicalTaskId: idSchema,
 });
 export type MarkDuplicateWorkRequestInput = z.infer<typeof markDuplicateWorkRequestInputSchema>;
+
+export const listWorkRequestsInputSchema = z.object({
+  status: workRequestStatusEnum.optional(),
+});
+export type ListWorkRequestsInput = z.infer<typeof listWorkRequestsInputSchema>;
