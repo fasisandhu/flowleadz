@@ -59,3 +59,37 @@ export async function createTask(
   await logStatusTransition(db, row!.id, null, "todo", ctx.actor.userId);
   return ok(row!);
 }
+
+export type CreateFromRequestInput = {
+  orgId: string;
+  projectId: string | null;
+  title: string;
+  description?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  sourceRequestId: string;
+  createdBy: string;
+};
+
+/**
+ * Internal-but-exported helper. Called by work-requests.submit (Plan 2b)
+ * inside the same transaction. NOT a public Server Action — the caller
+ * already authorized.
+ */
+export async function createFromRequest(db: AnyDb, input: CreateFromRequestInput): Promise<Task> {
+  const [row] = await db
+    .insert(schema.tasks)
+    .values({
+      orgId: input.orgId,
+      projectId: input.projectId,
+      title: input.title,
+      description: input.description ?? null,
+      priority: input.priority ?? "normal",
+      customerVisible: true,
+      source: "from_request",
+      sourceRequestId: input.sourceRequestId,
+      createdBy: input.createdBy,
+    })
+    .returning();
+  await logStatusTransition(db, row!.id, null, "todo", input.createdBy);
+  return row!;
+}
