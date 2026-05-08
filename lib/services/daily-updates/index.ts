@@ -1,8 +1,8 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
-import { requireProjectAccess } from "@/lib/services/_auth/predicates";
+import { requireProjectAccess, requireOrgAccess, requireDailyUpdateRead } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import type { OrgContext } from "@/lib/services/_context";
 import { captureRevision } from "./internal";
@@ -11,6 +11,8 @@ import {
   type CreateDailyUpdateInput,
   updateDailyUpdateInputSchema,
   type UpdateDailyUpdateInput,
+  listDailyUpdatesInputSchema,
+  type ListDailyUpdatesInput,
 } from "./schemas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,4 +167,53 @@ export async function updateDailyUpdate(
     .where(eq(schema.dailyUpdates.id, parsed.data.id))
     .returning();
   return ok(row!);
+}
+
+export async function listDailyUpdates(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListDailyUpdatesInput,
+): Promise<Result<DailyUpdate[]>> {
+  const parsed = listDailyUpdatesInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const access = await requireOrgAccess(db, ctx);
+  if (!access.ok) return access;
+
+  const conditions = [eq(schema.dailyUpdates.orgId, ctx.orgId)];
+  if (parsed.data.projectId) conditions.push(eq(schema.dailyUpdates.projectId, parsed.data.projectId));
+
+  if (ctx.actor.role === "customer") {
+    conditions.push(eq(schema.dailyUpdates.visibility, "customer_visible"));
+  }
+
+  if (ctx.actor.role === "employee") {
+    const assigned = await db
+      .select({ projectId: schema.projectAssignments.projectId })
+      .from(schema.projectAssignments)
+      .where(eq(schema.projectAssignments.userId, ctx.actor.userId));
+    const ids = assigned.map((r) => r.projectId);
+    if (ids.length === 0) return ok([]);
+    conditions.push(inArray(schema.dailyUpdates.projectId, ids));
+  }
+
+  const rows = await db
+    .select()
+    .from(schema.dailyUpdates)
+    .where(and(...conditions))
+    .orderBy(desc(schema.dailyUpdates.logDate), desc(schema.dailyUpdates.createdAt));
+  return ok(rows);
+}
+
+export async function getDailyUpdate(
+  db: AnyDb,
+  ctx: OrgContext,
+  id: string,
+): Promise<Result<DailyUpdate>> {
+  const access = await requireDailyUpdateRead(db, ctx, id);
+  if (!access.ok) return access;
+  const [row] = await db.select().from(schema.dailyUpdates).where(eq(schema.dailyUpdates.id, id)).limit(1);
+  if (!row) return err("not_found", "Daily update not found");
+  return ok(row);
 }

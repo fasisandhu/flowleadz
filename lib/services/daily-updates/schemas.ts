@@ -36,3 +36,8 @@ export const updateDailyUpdateInputSchema = z
   })
   .strict();
 export type UpdateDailyUpdateInput = z.infer<typeof updateDailyUpdateInputSchema>;
+
+export const listDailyUpdatesInputSchema = z.object({
+  projectId: idSchema.optional(),
+});
+export type ListDailyUpdatesInput = z.infer<typeof listDailyUpdatesInputSchema>;
