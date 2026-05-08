@@ -14,18 +14,15 @@ const eslintConfig = [
       "no-restricted-imports": [
         "error",
         {
-          paths: [
-            {
-              name: "@/lib/db/client",
-              message:
-                "Direct DB access is forbidden outside lib/services and lib/db. Go through a service function.",
-            },
-          ],
           patterns: [
             {
-              group: ["@/lib/db/client", "@/lib/db/schema/*"],
+              group: [
+                "@/lib/db/client",
+                "@/lib/db/schema",
+                "@/lib/db/schema/*",
+              ],
               message:
-                "Direct DB access is forbidden outside lib/services and lib/db.",
+                "Direct DB access is forbidden outside lib/services and lib/db. Go through a service function.",
             },
           ],
         },
@@ -33,7 +30,12 @@ const eslintConfig = [
     },
   },
   {
-    files: ["lib/services/**", "lib/db/**", "tests/**"],
+    files: [
+      "lib/services/**",
+      "lib/db/**",
+      "tests/fixtures/**",
+      "tests/integration/**",
+    ],
     rules: { "no-restricted-imports": "off" },
   },
   {
