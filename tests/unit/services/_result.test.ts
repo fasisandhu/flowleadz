@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ok, err, type Result, type AppError } from "@/lib/services/_result";
+import { ok, err, type AppError } from "@/lib/services/_result";
 
 describe("Result", () => {
   it("ok() wraps data with ok=true", () => {

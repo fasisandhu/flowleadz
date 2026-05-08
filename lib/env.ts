@@ -15,6 +15,7 @@ const envSchema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
   APP_URL: z.string().url(),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
   CRON_SECRET: z.string().min(16),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace"]).optional(),
 });

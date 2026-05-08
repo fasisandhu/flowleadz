@@ -11,6 +11,10 @@ const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "no-restricted-imports": [
         "error",
         {
@@ -40,7 +44,14 @@ const eslintConfig = [
     rules: { "no-restricted-imports": "off" },
   },
   {
-    ignores: ["lib/db/migrations/**", ".next/**", "node_modules/**", "playwright-report/**", "test-results/**"],
+    ignores: [
+      "lib/db/migrations/**",
+      ".next/**",
+      "node_modules/**",
+      "playwright-report/**",
+      "test-results/**",
+      "next-env.d.ts",
+    ],
   },
 ];
 
