@@ -6,7 +6,7 @@ import { requireOrgAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import { createFromRequest } from "@/lib/services/tasks";
 import type { OrgContext } from "@/lib/services/_context";
-import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput } from "./schemas";
+import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput, markDuplicateWorkRequestInputSchema, type MarkDuplicateWorkRequestInput } from "./schemas";
 import { requireRole } from "@/lib/services/_auth/predicates";
 import { logRequestStatusTransition } from "./internal";
 
@@ -274,6 +274,81 @@ export async function rejectWorkRequest(
         from: "submitted",
         to: "rejected",
         reason: parsed.data.reason,
+        actorId: ctx.actor.userId,
+      },
+      relatedType: "work_request",
+      relatedId: updated!.id,
+    });
+  }
+
+  return ok(updated!);
+}
+
+export async function markDuplicateWorkRequest(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: MarkDuplicateWorkRequestInput,
+): Promise<Result<WorkRequest>> {
+  const parsed = markDuplicateWorkRequestInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [request] = await db
+    .select()
+    .from(schema.workRequests)
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .limit(1);
+  if (!request) return err("not_found", "Work request not found");
+  if (request.orgId !== ctx.orgId) return err("not_found", "Work request not found");
+  if (request.status !== "submitted") {
+    return err("conflict", `Cannot mark duplicate on a request with status '${request.status}'`);
+  }
+
+  const [canonical] = await db
+    .select({ id: schema.tasks.id, orgId: schema.tasks.orgId, title: schema.tasks.title })
+    .from(schema.tasks)
+    .where(eq(schema.tasks.id, parsed.data.canonicalTaskId))
+    .limit(1);
+  if (!canonical || canonical.orgId !== ctx.orgId) {
+    return err("not_found", "Canonical task not found");
+  }
+
+  const reason = `Duplicate of task ${canonical.id} (${canonical.title})`;
+
+  const [updated] = await db
+    .update(schema.workRequests)
+    .set({
+      status: "duplicate",
+      rejectionReason: reason,
+      reviewedBy: ctx.actor.userId,
+      reviewedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(schema.workRequests.id, parsed.data.id))
+    .returning();
+
+  if (request.resolvedTaskId) {
+    await cancelLinkedTask(db, request.resolvedTaskId, ctx.actor.userId, reason);
+  }
+
+  await logRequestStatusTransition(db, parsed.data.id, "submitted", "duplicate", ctx.actor.userId, reason);
+
+  if (request.submittedBy !== ctx.actor.userId) {
+    await emit(db, {
+      orgId: ctx.orgId,
+      eventType: "work_request.status_changed",
+      recipientUserIds: [request.submittedBy],
+      payload: {
+        workRequestId: updated!.id,
+        title: updated!.title,
+        from: "submitted",
+        to: "duplicate",
+        reason,
+        canonicalTaskId: canonical.id,
         actorId: ctx.actor.userId,
       },
       relatedType: "work_request",

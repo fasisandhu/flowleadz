@@ -23,3 +23,9 @@ export const rejectWorkRequestInputSchema = z.object({
   reason: nonEmptyStringSchema.max(2000),
 });
 export type RejectWorkRequestInput = z.infer<typeof rejectWorkRequestInputSchema>;
+
+export const markDuplicateWorkRequestInputSchema = z.object({
+  id: idSchema,
+  canonicalTaskId: idSchema,
+});
+export type MarkDuplicateWorkRequestInput = z.infer<typeof markDuplicateWorkRequestInputSchema>;
