@@ -1,8 +1,8 @@
-import { and, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
-import { requireCommentWrite } from "@/lib/services/_auth/predicates";
+import { requireCommentWrite, requireDailyUpdateRead } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
 import type { OrgContext } from "@/lib/services/_context";
 import { createCommentInputSchema, type CreateCommentInput, updateCommentInputSchema, type UpdateCommentInput, softDeleteCommentInputSchema, type SoftDeleteCommentInput } from "./schemas";
@@ -169,4 +169,20 @@ export async function softDeleteComment(
     .set({ deletedAt: new Date(), updatedAt: new Date() })
     .where(eq(schema.comments.id, parsed.data.id));
   return ok(true);
+}
+
+export async function listComments(
+  db: AnyDb,
+  ctx: OrgContext,
+  dailyUpdateId: string,
+): Promise<Result<Comment[]>> {
+  const access = await requireDailyUpdateRead(db, ctx, dailyUpdateId);
+  if (!access.ok) return access;
+
+  const rows = await db
+    .select()
+    .from(schema.comments)
+    .where(eq(schema.comments.dailyUpdateId, dailyUpdateId))
+    .orderBy(asc(schema.comments.createdAt), asc(schema.comments.id));
+  return ok(rows);
 }
