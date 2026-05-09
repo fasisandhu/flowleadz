@@ -14,7 +14,9 @@ export async function logTimeAction(input: timeEntries.LogTimeInput) {
 }
 
 export async function listTimeEntriesAction(input: timeEntries.ListTimeEntriesInput = {}) {
-  return withSessionContext((db, ctx) => timeEntries.listTimeEntries(db, ctx, input));
+  return withSessionContext((db, ctx) =>
+    timeEntries.listTimeEntries(db, ctx, { userId: ctx.actor.userId, ...input }),
+  );
 }
 
 export async function updateTimeEntryAction(input: timeEntries.UpdateTimeEntryInput) {
