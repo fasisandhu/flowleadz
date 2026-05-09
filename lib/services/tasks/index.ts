@@ -13,6 +13,8 @@ import {
   taskAssignmentInputSchema, type TaskAssignmentInput,
   listTasksInputSchema, type ListTasksInput,
 } from "./schemas";
+
+export type { ListTasksInput, CreateTaskInput, UpdateTaskInput, ChangeTaskStatusInput, TaskAssignmentInput } from "./schemas";
 import { logStatusTransition } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
