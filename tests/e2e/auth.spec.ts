@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { seedTestUsers, closeSeedPool } from "./fixtures/seed";
+import { seedTestUsers, cleanupTestData, closeSeedPool } from "./fixtures/seed";
 
 const PWD = "Passw0rd!Test123";
 
@@ -8,6 +8,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  await cleanupTestData();
   await closeSeedPool();
 });
 

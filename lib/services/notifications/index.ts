@@ -6,6 +6,8 @@ import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
 
+export type { ListForUserInput, MarkReadInput, UpsertPreferenceInput, EmitInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 

@@ -10,6 +10,8 @@ import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRe
 import { requireRole } from "@/lib/services/_auth/predicates";
 import { logRequestStatusTransition } from "./internal";
 
+export type { SubmitWorkRequestInput, AcceptWorkRequestInput, RejectWorkRequestInput, MarkDuplicateWorkRequestInput, ListWorkRequestsInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type WorkRequest = typeof schema.workRequests.$inferSelect;
