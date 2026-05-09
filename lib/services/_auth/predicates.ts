@@ -136,3 +136,54 @@ export async function requireTaskWrite(
   if (assigned.length === 0) return err("unauthorized", "Not assigned to this project");
   return ok(true);
 }
+
+export async function requireDailyUpdateRead(
+  db: AnyDb,
+  ctx: OrgContext,
+  dailyUpdateId: string,
+): Promise<Result<true>> {
+  const [row] = await db
+    .select({
+      id: schema.dailyUpdates.id,
+      orgId: schema.dailyUpdates.orgId,
+      projectId: schema.dailyUpdates.projectId,
+      visibility: schema.dailyUpdates.visibility,
+    })
+    .from(schema.dailyUpdates)
+    .where(eq(schema.dailyUpdates.id, dailyUpdateId))
+    .limit(1);
+  if (!row) return err("not_found", "Daily update not found");
+  if (row.orgId !== ctx.orgId) return err("not_found", "Daily update not found");
+
+  if (ctx.actor.role === "admin") return ok(true);
+
+  if (ctx.actor.role === "customer") {
+    if (row.visibility !== "customer_visible") {
+      return err("unauthorized", "Update is internal-only");
+    }
+    return requireOrgAccess(db, ctx);
+  }
+
+  // employee — must be assigned to the project
+  const assigned = await db
+    .select({ projectId: schema.projectAssignments.projectId })
+    .from(schema.projectAssignments)
+    .where(
+      and(
+        eq(schema.projectAssignments.userId, ctx.actor.userId),
+        eq(schema.projectAssignments.projectId, row.projectId),
+      ),
+    )
+    .limit(1);
+  if (assigned.length === 0) return err("unauthorized", "Not assigned to this project");
+  return ok(true);
+}
+
+export async function requireCommentWrite(
+  db: AnyDb,
+  ctx: OrgContext,
+  dailyUpdateId: string,
+): Promise<Result<true>> {
+  // Anyone who can READ the parent update can comment on it.
+  return requireDailyUpdateRead(db, ctx, dailyUpdateId);
+}
