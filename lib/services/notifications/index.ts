@@ -1,7 +1,10 @@
 import * as schema from "@/lib/db/schema";
 import type { PgDatabase } from "drizzle-orm/pg-core";
-import { emitInputSchema, type EmitInput } from "./schemas";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput, markReadInputSchema, type MarkReadInput, upsertPreferenceInputSchema, type UpsertPreferenceInput } from "./schemas";
 import { resolvePreferences } from "./internal";
+import { err, ok, type Result } from "@/lib/services/_result";
+import type { OrgContext } from "@/lib/services/_context";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -43,4 +46,136 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
       sentAt: new Date(),
     })),
   );
+}
+
+type Notification = typeof schema.notifications.$inferSelect;
+
+export type ListForUserResult = {
+  notifications: Notification[];
+  unreadCount: number;
+};
+
+function zodIssuesToFields(issues: { path: PropertyKey[]; message: string }[]) {
+  const fields: Record<string, string> = {};
+  for (const issue of issues) {
+    const key = issue.path.map(String).join(".");
+    if (key && !fields[key]) fields[key] = issue.message;
+  }
+  return fields;
+}
+
+export async function listForUser(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListForUserInput,
+): Promise<Result<ListForUserResult>> {
+  const parsed = listForUserInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const conditions = [eq(schema.notifications.userId, ctx.actor.userId)];
+  if (parsed.data.filter === "unread") {
+    conditions.push(isNull(schema.notifications.readAt));
+  }
+
+  const rowsQuery = db
+    .select()
+    .from(schema.notifications)
+    .where(and(...conditions))
+    .orderBy(desc(schema.notifications.createdAt))
+    .limit(parsed.data.limit ?? 50)
+    .offset(parsed.data.offset ?? 0);
+
+  const unreadQuery = db
+    .select({ value: count() })
+    .from(schema.notifications)
+    .where(
+      and(
+        eq(schema.notifications.userId, ctx.actor.userId),
+        isNull(schema.notifications.readAt),
+      ),
+    );
+
+  const [notifications, unreadCountRows] = await Promise.all([rowsQuery, unreadQuery]);
+  const unreadCount = Number(unreadCountRows[0]?.value ?? 0);
+
+  return ok({ notifications, unreadCount });
+}
+
+export async function markRead(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: MarkReadInput,
+): Promise<Result<{ markedCount: number }>> {
+  const parsed = markReadInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const result = await db
+    .update(schema.notifications)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        inArray(schema.notifications.id, parsed.data.ids),
+        eq(schema.notifications.userId, ctx.actor.userId),
+        isNull(schema.notifications.readAt),
+      ),
+    )
+    .returning({ id: schema.notifications.id });
+
+  return ok({ markedCount: result.length });
+}
+
+export async function upsertPreference(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpsertPreferenceInput,
+): Promise<Result<true>> {
+  const parsed = upsertPreferenceInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const target = parsed.data.target ?? "user";
+  if (target === "org" && ctx.actor.role !== "admin") {
+    return err("unauthorized", "Only admins can set the org default");
+  }
+
+  const userId = target === "org" ? null : ctx.actor.userId;
+
+  const existingConds = [
+    eq(schema.notificationPreferences.orgId, ctx.orgId),
+    eq(schema.notificationPreferences.eventType, parsed.data.eventType),
+    userId === null
+      ? isNull(schema.notificationPreferences.userId)
+      : eq(schema.notificationPreferences.userId, userId),
+  ];
+
+  const [existing] = await db
+    .select({ id: schema.notificationPreferences.id })
+    .from(schema.notificationPreferences)
+    .where(and(...existingConds))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(schema.notificationPreferences)
+      .set({
+        inAppEnabled: parsed.data.inAppEnabled,
+        emailEnabled: parsed.data.emailEnabled,
+      })
+      .where(eq(schema.notificationPreferences.id, existing.id));
+  } else {
+    await db.insert(schema.notificationPreferences).values({
+      orgId: ctx.orgId,
+      userId,
+      eventType: parsed.data.eventType,
+      inAppEnabled: parsed.data.inAppEnabled,
+      emailEnabled: parsed.data.emailEnabled,
+    });
+  }
+
+  return ok(true);
 }

@@ -10,3 +10,25 @@ export const emitInputSchema = z.object({
 });
 
 export type EmitInput = z.infer<typeof emitInputSchema>;
+
+export const listForUserInputSchema = z.object({
+  filter: z.enum(["all", "unread"]).optional(),
+  limit: z.number().int().positive().max(100).optional(),
+  offset: z.number().int().nonnegative().optional(),
+});
+export type ListForUserInput = z.infer<typeof listForUserInputSchema>;
+
+import { idSchema } from "@/lib/services/_schemas/common";
+
+export const markReadInputSchema = z.object({
+  ids: z.array(idSchema).min(1, "At least one id is required"),
+});
+export type MarkReadInput = z.infer<typeof markReadInputSchema>;
+
+export const upsertPreferenceInputSchema = z.object({
+  target: z.enum(["user", "org"]).optional(),
+  eventType: z.string().min(1).max(100),
+  inAppEnabled: z.boolean(),
+  emailEnabled: z.boolean(),
+});
+export type UpsertPreferenceInput = z.infer<typeof upsertPreferenceInputSchema>;
