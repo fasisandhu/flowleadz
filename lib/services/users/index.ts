@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
 import { env } from "@/lib/env";
 import { log } from "@/lib/log";
-import { inviteUserInputSchema, type InviteUserInput, acceptInvitationInputSchema, type AcceptInvitationInput } from "./schemas";
+import { inviteUserInputSchema, type InviteUserInput, acceptInvitationInputSchema, type AcceptInvitationInput, listOrgMembersInputSchema, type ListOrgMembersInput } from "./schemas";
 import { generateInvitationToken, hashUserPassword } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,4 +158,37 @@ export async function acceptInvitation(
     .where(eq(schema.invitations.id, invitation.id));
 
   return ok(user!);
+}
+
+export async function listOrgMembers(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListOrgMembersInput,
+): Promise<Result<User[]>> {
+  const parsed = listOrgMembersInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const rows = await db
+    .select({
+      id: schema.users.id,
+      name: schema.users.name,
+      email: schema.users.email,
+      emailVerified: schema.users.emailVerified,
+      image: schema.users.image,
+      systemRole: schema.users.systemRole,
+      defaultHourlyRateCents: schema.users.defaultHourlyRateCents,
+      timezone: schema.users.timezone,
+      notificationPreferencesSet: schema.users.notificationPreferencesSet,
+      createdAt: schema.users.createdAt,
+      updatedAt: schema.users.updatedAt,
+    })
+    .from(schema.users)
+    .innerJoin(schema.members, eq(schema.members.userId, schema.users.id))
+    .where(eq(schema.members.organizationId, parsed.data.orgId))
+    .orderBy(asc(schema.users.email));
+  return ok(rows);
 }

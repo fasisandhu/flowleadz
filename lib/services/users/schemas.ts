@@ -25,3 +25,8 @@ export const acceptInvitationInputSchema = z.object({
   name: nonEmptyStringSchema.max(200),
 });
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationInputSchema>;
+
+export const listOrgMembersInputSchema = z.object({
+  orgId: idSchema,
+});
+export type ListOrgMembersInput = z.infer<typeof listOrgMembersInputSchema>;
