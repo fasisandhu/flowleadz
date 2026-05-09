@@ -9,6 +9,8 @@ import { log } from "@/lib/log";
 import { inviteUserInputSchema, type InviteUserInput, acceptInvitationInputSchema, type AcceptInvitationInput, listOrgMembersInputSchema, type ListOrgMembersInput } from "./schemas";
 import { generateInvitationToken, hashUserPassword } from "./internal";
 
+export type { InviteUserInput, AcceptInvitationInput, ListOrgMembersInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 
