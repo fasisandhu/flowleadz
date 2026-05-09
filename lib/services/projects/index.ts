@@ -1,5 +1,5 @@
 import type { PgDatabase } from "drizzle-orm/pg-core";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireOrgAccess, requireProjectAccess, requireRole } from "@/lib/services/_auth/predicates";
@@ -192,6 +192,41 @@ export async function assignToProject(
     .values({ userId: parsed.data.userId, projectId: parsed.data.projectId })
     .onConflictDoNothing();
   return ok(true);
+}
+
+export type ProjectAssignment = {
+  userId: string;
+  name: string;
+};
+
+export async function listProjectAssignments(
+  db: AnyDb,
+  ctx: OrgContext,
+  projectId: string,
+): Promise<Result<ProjectAssignment[]>> {
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const [project] = await db
+    .select({ id: schema.projects.id, orgId: schema.projects.orgId })
+    .from(schema.projects)
+    .where(eq(schema.projects.id, projectId))
+    .limit(1);
+  if (!project) return err("not_found", "Project not found");
+  if (project.orgId !== ctx.orgId) return err("not_found", "Project not found");
+
+  const rows = await db
+    .select({
+      userId: schema.projectAssignments.userId,
+      name: schema.users.name,
+      email: schema.users.email,
+    })
+    .from(schema.projectAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.projectAssignments.userId))
+    .where(eq(schema.projectAssignments.projectId, projectId))
+    .orderBy(asc(schema.users.email));
+
+  return ok(rows.map((r) => ({ userId: r.userId, name: r.name ?? r.email })));
 }
 
 export async function unassignFromProject(

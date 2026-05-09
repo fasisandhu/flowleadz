@@ -8,6 +8,9 @@ import type { OrgContext } from "@/lib/services/_context";
 
 export type { ListForUserInput, MarkReadInput, UpsertPreferenceInput, EmitInput } from "./schemas";
 
+// Admin-facing type aliases — the admin wrappers reference these names.
+export type { ListForUserInput as ListNotificationsInput, MarkReadInput as MarkNotificationsReadInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 

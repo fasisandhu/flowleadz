@@ -1,8 +1,9 @@
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen">
-      <header className="border-b bg-white p-4"><h1 className="font-semibold">Admin</h1></header>
-      <main className="p-6">{children}</main>
-    </div>
-  );
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { auth } from "@/lib/better-auth/config";
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) redirect("/login");
+  return <>{children}</>;
 }
