@@ -17,8 +17,9 @@ test("admin signs in and lands on the admin dashboard", async ({ page }) => {
   await page.fill("input#email", "admin@e2e.test");
   await page.fill("input#password", PWD);
   await page.click('button:has-text("Sign in")');
-  await expect(page).toHaveURL(/\/admin\/dashboard$/, { timeout: 15_000 });
-  await expect(page.getByText("Admin dashboard")).toBeVisible();
+  // /admin/dashboard immediately redirects to /admin/orgs/<id>/dashboard.
+  await expect(page).toHaveURL(/\/admin\/orgs\/[^/]+\/dashboard$/, { timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
 });
 
 test("employee signs in and lands on the employee dashboard", async ({ page }) => {

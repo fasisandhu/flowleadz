@@ -64,12 +64,12 @@ export async function seedTestUsers() {
        SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
      )`,
   );
-  await exec(
-    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
-  );
-  // 2. Remove work_requests submitted by e2e users (cascades work_request_status_log).
+  // 2. Remove work_requests before projects (FK: work_requests.project_id → projects.id).
   await exec(
     "DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  await exec(
+    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
   );
   // 3. Now safe to delete users (cascades accounts/sessions/members).
   await exec("DELETE FROM users WHERE email LIKE '%@e2e.test'");
@@ -142,7 +142,19 @@ export async function seedTestUsers() {
   );
   const taskId = (taskRes.rows[0] as { id: string }).id;
 
-  return { password: TEST_PASSWORD, projectId, taskId };
+  // Customer-submitted work request, in 'submitted' state.
+  // project_id is included so the admin can accept without selecting a project.
+  const customerRow2 = await exec("SELECT id FROM users WHERE email = 'customer@e2e.test'");
+  const customerId2 = (customerRow2.rows[0] as { id: string }).id;
+  const requestRes = await exec(
+    `INSERT INTO work_requests (org_id, project_id, title, description, status, submitted_by)
+     VALUES ($1, $2, 'E2E request to accept', 'Please make this thing happen', 'submitted', $3)
+     RETURNING id`,
+    [orgId, projectId, customerId2],
+  );
+  const workRequestId = (requestRes.rows[0] as { id: string }).id;
+
+  return { password: TEST_PASSWORD, projectId, taskId, workRequestId };
 }
 
 /**
@@ -171,11 +183,12 @@ export async function cleanupTestData() {
        SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
      )`,
   );
-  await exec(
-    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
-  );
+  // Delete work_requests before projects (FK: work_requests.project_id → projects.id).
   await exec(
     `DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')`,
+  );
+  await exec(
+    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
   );
   await exec(`DELETE FROM users WHERE email LIKE '%@e2e.test'`);
   await exec(`DELETE FROM organizations WHERE slug = 'acme-e2e'`);

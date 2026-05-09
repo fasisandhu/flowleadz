@@ -21,6 +21,12 @@ export const auth = betterAuth({
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  // Rate limiting: disabled when DISABLE_RATE_LIMIT=1 (set in local .env for E2E
+  // tests, which run multiple sign-ins in rapid succession and trip the default
+  // 3-per-10s window). Never set this in production deployments.
+  rateLimit: {
+    enabled: process.env.DISABLE_RATE_LIMIT !== "1",
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
