@@ -5,6 +5,7 @@ import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUs
 import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
+import { sendNotificationEmail } from "@/lib/email/dispatch";
 
 export type { ListForUserInput, MarkReadInput, UpsertPreferenceInput, EmitInput } from "./schemas";
 
@@ -15,8 +16,11 @@ export type { ListForUserInput as ListNotificationsInput, MarkReadInput as MarkN
 type AnyDb = PgDatabase<any, typeof schema>;
 
 /**
- * Insert notification rows + in_app delivery rows for each recipient
- * whose effective preference allows it. Email delivery is deferred to Plan 4.
+ * Insert notification rows + delivery rows for each recipient. Two channels:
+ * - "in_app" for users with inAppEnabled
+ * - "email" for users with emailEnabled (template lookup happens in dispatch.ts;
+ *   if no template is registered for the event type the delivery is recorded
+ *   as failed but the originating action still succeeds)
  *
  * Idempotent on duplicate recipientUserIds (deduped before insert).
  */
@@ -26,31 +30,76 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
 
   const prefs = await resolvePreferences(db, parsed.orgId, parsed.eventType, uniqueRecipients);
   const inAppRecipients = prefs.filter((p) => p.inAppEnabled).map((p) => p.userId);
+  const emailRecipientIds = prefs.filter((p) => p.emailEnabled).map((p) => p.userId);
 
-  if (inAppRecipients.length === 0) return;
+  // 1. In-app
+  let inAppNotifIds: { id: string; userId: string }[] = [];
+  if (inAppRecipients.length > 0) {
+    inAppNotifIds = await db
+      .insert(schema.notifications)
+      .values(
+        inAppRecipients.map((userId) => ({
+          orgId: parsed.orgId,
+          userId,
+          eventType: parsed.eventType,
+          payload: parsed.payload,
+          relatedType: parsed.relatedType ?? null,
+          relatedId: parsed.relatedId ?? null,
+        })),
+      )
+      .returning({ id: schema.notifications.id, userId: schema.notifications.userId });
 
-  const inserted = await db
-    .insert(schema.notifications)
-    .values(
-      inAppRecipients.map((userId) => ({
-        orgId: parsed.orgId,
-        userId,
-        eventType: parsed.eventType,
-        payload: parsed.payload,
-        relatedType: parsed.relatedType ?? null,
-        relatedId: parsed.relatedId ?? null,
+    await db.insert(schema.notificationDeliveries).values(
+      inAppNotifIds.map((row) => ({
+        notificationId: row.id,
+        channel: "in_app" as const,
+        status: "sent" as const,
+        sentAt: new Date(),
       })),
-    )
-    .returning({ id: schema.notifications.id });
+    );
+  }
 
-  await db.insert(schema.notificationDeliveries).values(
-    inserted.map((row) => ({
-      notificationId: row.id,
-      channel: "in_app" as const,
-      status: "sent" as const,
-      sentAt: new Date(),
-    })),
-  );
+  // 2. Email
+  if (emailRecipientIds.length === 0) return;
+
+  const userRows = await db
+    .select({ id: schema.users.id, email: schema.users.email, name: schema.users.name })
+    .from(schema.users)
+    .where(inArray(schema.users.id, emailRecipientIds));
+
+  const userToNotifId = new Map(inAppNotifIds.map((r) => [r.userId, r.id]));
+
+  for (const user of userRows) {
+    let notifId = userToNotifId.get(user.id);
+    if (!notifId) {
+      // Email-only delivery: insert a notification row first.
+      const [row] = await db
+        .insert(schema.notifications)
+        .values({
+          orgId: parsed.orgId,
+          userId: user.id,
+          eventType: parsed.eventType,
+          payload: parsed.payload,
+          relatedType: parsed.relatedType ?? null,
+          relatedId: parsed.relatedId ?? null,
+        })
+        .returning({ id: schema.notifications.id });
+      notifId = row!.id;
+    }
+
+    const result = await sendNotificationEmail(parsed.eventType, parsed.payload, {
+      userId: user.id,
+      email: user.email,
+      name: user.name ?? null,
+    });
+    await db.insert(schema.notificationDeliveries).values({
+      notificationId: notifId,
+      channel: "email",
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? null : result.error,
+      sentAt: result.ok ? new Date() : null,
+    });
+  }
 }
 
 type Notification = typeof schema.notifications.$inferSelect;

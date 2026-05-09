@@ -96,6 +96,7 @@ export async function submitWorkRequest(
       recipientUserIds: adminIds,
       payload: {
         workRequestId: updated!.id,
+        orgId: ctx.orgId,
         title: updated!.title,
         actorId: ctx.actor.userId,
       },
