@@ -3,7 +3,7 @@ import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
-import { presignPut, headObject, deleteObject } from "@/lib/storage/r2-client";
+import { presignPut, presignGet, headObject, deleteObject } from "@/lib/storage/r2-client";
 import { log } from "@/lib/log";
 import {
   getUploadUrlInputSchema,
@@ -199,4 +199,27 @@ export async function listForParent(
     )
     .orderBy(schema.attachments.createdAt);
   return ok(rows);
+}
+
+export type GetDownloadUrlInput = { id: string };
+
+export async function getDownloadUrl(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: GetDownloadUrlInput,
+): Promise<Result<{ url: string; filename: string; contentType: string }>> {
+  const [row] = await db
+    .select()
+    .from(schema.attachments)
+    .where(eq(schema.attachments.id, input.id))
+    .limit(1);
+  if (!row) return err("not_found", "Attachment not found");
+  if (row.orgId !== ctx.orgId) return err("not_found", "Attachment not found");
+  if (row.status !== "ready") return err("not_found", "Attachment not ready");
+
+  const auth = await authorizeAttachmentParentRead(db, ctx, row.parentType, row.parentId);
+  if (!auth.ok) return auth;
+
+  const url = await presignGet(row.r2Key, 900);
+  return ok({ url, filename: row.filename, contentType: row.contentType });
 }

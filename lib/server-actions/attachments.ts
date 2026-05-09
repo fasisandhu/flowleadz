@@ -14,3 +14,7 @@ export async function confirmAttachmentAction(input: attachments.ConfirmAttachme
 export async function listAttachmentsForParentAction(input: attachments.ListForParentInput) {
   return withSessionContext((db, ctx) => attachments.listForParent(db, ctx, input));
 }
+
+export async function getAttachmentDownloadUrlAction(input: { id: string }) {
+  return withSessionContext((db, ctx) => attachments.getDownloadUrl(db, ctx, input));
+}
