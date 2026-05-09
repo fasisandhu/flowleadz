@@ -8,6 +8,8 @@ import type { OrgContext } from "@/lib/services/_context";
 import { createCommentInputSchema, type CreateCommentInput, updateCommentInputSchema, type UpdateCommentInput, softDeleteCommentInputSchema, type SoftDeleteCommentInput } from "./schemas";
 import { captureCommentRevision } from "./internal";
 
+export type { CreateCommentInput, UpdateCommentInput, SoftDeleteCommentInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type Comment = typeof schema.comments.$inferSelect;

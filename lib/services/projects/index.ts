@@ -6,6 +6,8 @@ import { requireOrgAccess, requireProjectAccess, requireRole } from "@/lib/servi
 import type { OrgContext } from "@/lib/services/_context";
 import { createProjectInputSchema, type CreateProjectInput, updateProjectInputSchema, type UpdateProjectInput, listProjectsInputSchema, type ListProjectsInput, assignmentInputSchema, type AssignmentInput } from "./schemas";
 
+export type { ListProjectsInput, CreateProjectInput, UpdateProjectInput, AssignmentInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type Project = typeof schema.projects.$inferSelect;

@@ -15,6 +15,8 @@ import {
 } from "./schemas";
 import { authorizeAttachmentParentWrite, authorizeAttachmentParentRead, buildR2Key } from "./internal";
 
+export type { GetUploadUrlInput, ConfirmAttachmentInput, ListForParentInput } from "./schemas";
+
 type Attachment = typeof schema.attachments.$inferSelect;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -15,6 +15,8 @@ import {
   type ListDailyUpdatesInput,
 } from "./schemas";
 
+export type { ListDailyUpdatesInput, CreateDailyUpdateInput, UpdateDailyUpdateInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type DailyUpdate = typeof schema.dailyUpdates.$inferSelect;
