@@ -12,12 +12,19 @@ import { Pool } from "pg";
 import { generateId } from "better-auth";
 import { hashPassword } from "better-auth/crypto";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ?? "postgres://crm:crm@localhost:5433/crm",
-});
+let pool: Pool | null = null;
+
+function getPool(): Pool {
+  if (!pool) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL ?? "postgres://crm:crm@localhost:5433/crm",
+    });
+  }
+  return pool;
+}
 
 async function exec(sql: string, params: unknown[] = []) {
-  const c = await pool.connect();
+  const c = await getPool().connect();
   try {
     return await c.query(sql, params);
   } finally {
@@ -34,7 +41,18 @@ const TEST_USERS = [
 ] as const;
 
 export async function seedTestUsers() {
-  // Wipe previous test data — cascades clean accounts/sessions/members.
+  // Wipe previous test data in dependency order so FK constraints are satisfied.
+  // 1. Remove tasks created by e2e users first — tasks.source_request_id has ON DELETE SET NULL
+  //    which would violate tasks_source_consistency check when work_requests are deleted.
+  //    Deleting tasks first cascades task_status_log, task_assignments.
+  await exec(
+    "DELETE FROM tasks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  // 2. Remove work_requests submitted by e2e users (cascades work_request_status_log).
+  await exec(
+    "DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  // 3. Now safe to delete users (cascades accounts/sessions/members).
   await exec("DELETE FROM users WHERE email LIKE '%@e2e.test'");
   await exec("DELETE FROM organizations WHERE slug = 'acme-e2e'");
 
@@ -79,5 +97,8 @@ export async function seedTestUsers() {
 }
 
 export async function closeSeedPool() {
-  await pool.end();
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
 }
