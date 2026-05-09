@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, lt } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
-import { presignPut, headObject } from "@/lib/storage/r2-client";
+import { presignPut, headObject, deleteObject } from "@/lib/storage/r2-client";
+import { log } from "@/lib/log";
 import {
   getUploadUrlInputSchema,
   type GetUploadUrlInput,
@@ -133,4 +134,33 @@ export async function confirm(
     .where(eq(schema.attachments.id, parsed.data.id))
     .returning();
   return ok(row!);
+}
+
+export async function gcPending(db: AnyDb): Promise<Result<{ deleted: number }>> {
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000);
+
+  const stale = await db
+    .select({ id: schema.attachments.id, r2Key: schema.attachments.r2Key })
+    .from(schema.attachments)
+    .where(
+      and(
+        eq(schema.attachments.status, "pending"),
+        lt(schema.attachments.createdAt, cutoff),
+      ),
+    );
+
+  if (stale.length === 0) return ok({ deleted: 0 });
+
+  for (const row of stale) {
+    try {
+      await deleteObject(row.r2Key);
+    } catch (e) {
+      log.warn({ err: e, r2Key: row.r2Key }, "gcPending: R2 deleteObject failed (continuing)");
+    }
+  }
+
+  const ids = stale.map((row) => row.id);
+  await db.delete(schema.attachments).where(inArray(schema.attachments.id, ids));
+
+  return ok({ deleted: stale.length });
 }
