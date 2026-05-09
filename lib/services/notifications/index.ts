@@ -1,7 +1,10 @@
 import * as schema from "@/lib/db/schema";
 import type { PgDatabase } from "drizzle-orm/pg-core";
-import { emitInputSchema, type EmitInput } from "./schemas";
+import { and, count, desc, eq, isNull } from "drizzle-orm";
+import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput } from "./schemas";
 import { resolvePreferences } from "./internal";
+import { err, ok, type Result } from "@/lib/services/_result";
+import type { OrgContext } from "@/lib/services/_context";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -43,4 +46,59 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
       sentAt: new Date(),
     })),
   );
+}
+
+type Notification = typeof schema.notifications.$inferSelect;
+
+export type ListForUserResult = {
+  notifications: Notification[];
+  unreadCount: number;
+};
+
+function zodIssuesToFields(issues: { path: PropertyKey[]; message: string }[]) {
+  const fields: Record<string, string> = {};
+  for (const issue of issues) {
+    const key = issue.path.map(String).join(".");
+    if (key && !fields[key]) fields[key] = issue.message;
+  }
+  return fields;
+}
+
+export async function listForUser(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListForUserInput,
+): Promise<Result<ListForUserResult>> {
+  const parsed = listForUserInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const conditions = [eq(schema.notifications.userId, ctx.actor.userId)];
+  if (parsed.data.filter === "unread") {
+    conditions.push(isNull(schema.notifications.readAt));
+  }
+
+  const rowsQuery = db
+    .select()
+    .from(schema.notifications)
+    .where(and(...conditions))
+    .orderBy(desc(schema.notifications.createdAt))
+    .limit(parsed.data.limit ?? 50)
+    .offset(parsed.data.offset ?? 0);
+
+  const unreadQuery = db
+    .select({ value: count() })
+    .from(schema.notifications)
+    .where(
+      and(
+        eq(schema.notifications.userId, ctx.actor.userId),
+        isNull(schema.notifications.readAt),
+      ),
+    );
+
+  const [notifications, unreadCountRows] = await Promise.all([rowsQuery, unreadQuery]);
+  const unreadCount = Number(unreadCountRows[0]?.value ?? 0);
+
+  return ok({ notifications, unreadCount });
 }

@@ -10,3 +10,10 @@ export const emitInputSchema = z.object({
 });
 
 export type EmitInput = z.infer<typeof emitInputSchema>;
+
+export const listForUserInputSchema = z.object({
+  filter: z.enum(["all", "unread"]).optional(),
+  limit: z.number().int().positive().max(100).optional(),
+  offset: z.number().int().nonnegative().optional(),
+});
+export type ListForUserInput = z.infer<typeof listForUserInputSchema>;
