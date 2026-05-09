@@ -10,8 +10,10 @@ import {
   type GetUploadUrlInput,
   confirmAttachmentInputSchema,
   type ConfirmAttachmentInput,
+  listForParentInputSchema,
+  type ListForParentInput,
 } from "./schemas";
-import { authorizeAttachmentParentWrite, buildR2Key } from "./internal";
+import { authorizeAttachmentParentWrite, authorizeAttachmentParentRead, buildR2Key } from "./internal";
 
 type Attachment = typeof schema.attachments.$inferSelect;
 
@@ -163,4 +165,36 @@ export async function gcPending(db: AnyDb): Promise<Result<{ deleted: number }>>
   await db.delete(schema.attachments).where(inArray(schema.attachments.id, ids));
 
   return ok({ deleted: stale.length });
+}
+
+export async function listForParent(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ListForParentInput,
+): Promise<Result<Attachment[]>> {
+  const parsed = listForParentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const auth = await authorizeAttachmentParentRead(
+    db,
+    ctx,
+    parsed.data.parentType,
+    parsed.data.parentId,
+  );
+  if (!auth.ok) return auth;
+
+  const rows = await db
+    .select()
+    .from(schema.attachments)
+    .where(
+      and(
+        eq(schema.attachments.parentType, parsed.data.parentType),
+        eq(schema.attachments.parentId, parsed.data.parentId),
+        eq(schema.attachments.status, "ready"),
+      ),
+    )
+    .orderBy(schema.attachments.createdAt);
+  return ok(rows);
 }
