@@ -28,6 +28,10 @@ export async function adminUpdateProjectAction(orgId: string, input: projects.Up
   return r;
 }
 
+export async function adminListProjectAssignmentsAction(orgId: string, projectId: string) {
+  return withSessionContext((db, ctx) => projects.listProjectAssignments(db, ctx, projectId), { staffOrgId: orgId });
+}
+
 export async function adminAssignToProjectAction(orgId: string, input: projects.AssignmentInput) {
   const r = await withSessionContext((db, ctx) => projects.assignToProject(db, ctx, input), { staffOrgId: orgId });
   if (r.ok) revalidatePath(`/admin/orgs/${orgId}/projects/${input.projectId}`, "page");
