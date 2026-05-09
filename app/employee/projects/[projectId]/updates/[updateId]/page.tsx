@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getDailyUpdateAction } from "@/lib/server-actions/daily-updates";
 import { CommentThread } from "@/components/app/comment-thread";
+import { AttachmentList } from "@/components/app/attachment-list";
+import { AttachmentUpload } from "@/components/app/attachment-upload";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   planning: "Planning",
@@ -54,6 +56,14 @@ export default async function EmployeeDailyUpdatePage({
       <section>
         <h2 className="mb-3 text-lg font-medium">Comments</h2>
         <CommentThread dailyUpdateId={updateId} />
+      </section>
+
+      <Separator />
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Attachments</h2>
+        <AttachmentList parentType="daily_update" parentId={updateId} />
+        <AttachmentUpload parentType="daily_update" parentId={updateId} />
       </section>
     </article>
   );
