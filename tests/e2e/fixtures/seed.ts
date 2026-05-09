@@ -96,6 +96,21 @@ export async function seedTestUsers() {
   return { password: TEST_PASSWORD };
 }
 
+/**
+ * Tear down all e2e-created rows so subsequent vitest runs don't see them
+ * in `SELECT *` queries. Cascades from users handle notifications + deliveries.
+ */
+export async function cleanupTestData() {
+  await exec(
+    "DELETE FROM tasks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  await exec(
+    "DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  await exec("DELETE FROM users WHERE email LIKE '%@e2e.test'");
+  await exec("DELETE FROM organizations WHERE slug = 'acme-e2e'");
+}
+
 export async function closeSeedPool() {
   if (pool) {
     await pool.end();
