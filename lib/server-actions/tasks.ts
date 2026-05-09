@@ -17,8 +17,8 @@ export async function changeTaskStatusAction(input: tasks.ChangeTaskStatusInput)
   if (result.ok) {
     revalidatePath("/employee/tasks", "page");
     revalidatePath("/employee/dashboard", "page");
-    revalidatePath(`/employee/projects/.+`, "page");
-    revalidatePath(`/customer/projects/.+`, "page");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/projects", "layout");
   }
   return result;
 }

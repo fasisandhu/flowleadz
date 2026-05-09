@@ -29,8 +29,8 @@ export async function createDailyUpdateAction(input: dailyUpdates.CreateDailyUpd
 export async function updateDailyUpdateAction(input: dailyUpdates.UpdateDailyUpdateInput) {
   const result = await withSessionContext((db, ctx) => dailyUpdates.updateDailyUpdate(db, ctx, input));
   if (result.ok) {
-    revalidatePath(`/employee/projects/.+/updates/${input.id}`, "page");
-    revalidatePath(`/customer/projects/.+/updates/${input.id}`, "page");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/projects", "layout");
   }
   return result;
 }
