@@ -3,12 +3,16 @@ import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
-import { presignPut } from "@/lib/storage/r2-client";
+import { presignPut, headObject } from "@/lib/storage/r2-client";
 import {
   getUploadUrlInputSchema,
   type GetUploadUrlInput,
+  confirmAttachmentInputSchema,
+  type ConfirmAttachmentInput,
 } from "./schemas";
 import { authorizeAttachmentParentWrite, buildR2Key } from "./internal";
+
+type Attachment = typeof schema.attachments.$inferSelect;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -77,4 +81,56 @@ export async function getUploadUrl(
   const uploadUrl = await presignPut(r2Key, parsed.data.contentType, parsed.data.sizeBytes);
 
   return ok({ attachmentId: row!.id, uploadUrl, r2Key });
+}
+
+export async function confirm(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: ConfirmAttachmentInput,
+): Promise<Result<Attachment>> {
+  const parsed = confirmAttachmentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(schema.attachments)
+    .where(eq(schema.attachments.id, parsed.data.id))
+    .limit(1);
+  if (!existing) return err("not_found", "Attachment not found");
+  if (existing.orgId !== ctx.orgId) return err("not_found", "Attachment not found");
+
+  if (ctx.actor.role !== "admin" && existing.uploadedBy !== ctx.actor.userId) {
+    return err("unauthorized", "Only the uploader or an admin can confirm this attachment");
+  }
+
+  if (existing.status === "ready") return ok(existing);
+
+  let head: { ContentLength?: number };
+  try {
+    head = await headObject(existing.r2Key);
+  } catch {
+    await db
+      .update(schema.attachments)
+      .set({ status: "failed" })
+      .where(eq(schema.attachments.id, parsed.data.id));
+    return err("not_found", "Object not found in R2");
+  }
+
+  const expectedSize = Number(existing.sizeBytes);
+  if (head.ContentLength !== expectedSize) {
+    await db
+      .update(schema.attachments)
+      .set({ status: "failed" })
+      .where(eq(schema.attachments.id, parsed.data.id));
+    return err("validation", `Size mismatch: expected ${expectedSize}, got ${head.ContentLength}`);
+  }
+
+  const [row] = await db
+    .update(schema.attachments)
+    .set({ status: "ready", confirmedAt: new Date() })
+    .where(eq(schema.attachments.id, parsed.data.id))
+    .returning();
+  return ok(row!);
 }
