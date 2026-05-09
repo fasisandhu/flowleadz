@@ -38,6 +38,7 @@ const eslintConfig = [
       "lib/services/**",
       "lib/db/**",
       "lib/better-auth/**",
+      "lib/server-actions/**",
       "tests/fixtures/**",
       "tests/integration/**",
       "tests/unit/**",
