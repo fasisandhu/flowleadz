@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { withSessionContext } from "./_action";
 import * as dailyUpdates from "@/lib/services/daily-updates";
 
@@ -13,4 +14,23 @@ export async function getDailyUpdateAction(id: string) {
 
 export async function listDailyUpdateRevisionsAction(id: string) {
   return withSessionContext((db, ctx) => dailyUpdates.listDailyUpdateRevisions(db, ctx, id));
+}
+
+export async function createDailyUpdateAction(input: dailyUpdates.CreateDailyUpdateInput) {
+  const result = await withSessionContext((db, ctx) => dailyUpdates.createDailyUpdate(db, ctx, input));
+  if (result.ok) {
+    revalidatePath("/employee/dashboard", "page");
+    revalidatePath(`/employee/projects/${input.projectId}`, "page");
+    revalidatePath(`/customer/projects/${input.projectId}`, "page");
+  }
+  return result;
+}
+
+export async function updateDailyUpdateAction(input: dailyUpdates.UpdateDailyUpdateInput) {
+  const result = await withSessionContext((db, ctx) => dailyUpdates.updateDailyUpdate(db, ctx, input));
+  if (result.ok) {
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/projects", "layout");
+  }
+  return result;
 }

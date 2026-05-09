@@ -8,7 +8,13 @@ import { listNotificationsAction } from "@/lib/server-actions/notifications";
 
 const POLL_INTERVAL_MS = 30_000;
 
-export function NotificationsBell({ initialUnreadCount }: { initialUnreadCount: number }) {
+export function NotificationsBell({
+  initialUnreadCount,
+  href = "/customer/notifications",
+}: {
+  initialUnreadCount: number;
+  href?: string;
+}) {
   const [unread, setUnread] = useState(initialUnreadCount);
 
   useEffect(() => {
@@ -26,7 +32,7 @@ export function NotificationsBell({ initialUnreadCount }: { initialUnreadCount: 
 
   return (
     <Link
-      href="/customer/notifications"
+      href={href}
       aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
       className="relative inline-flex items-center justify-center rounded-md p-2 hover:bg-slate-100"
     >

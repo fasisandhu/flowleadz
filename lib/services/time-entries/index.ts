@@ -16,6 +16,8 @@ import {
 } from "./schemas";
 import { resolveRate } from "./internal";
 
+export type { LogTimeInput, ListTimeEntriesInput, UpdateTimeEntryInput, DeleteTimeEntryInput } from "./schemas";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type TimeEntry = typeof schema.timeEntries.$inferSelect;
