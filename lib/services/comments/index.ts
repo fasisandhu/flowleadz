@@ -40,6 +40,7 @@ export async function createComment(
     .select({
       id: schema.dailyUpdates.id,
       orgId: schema.dailyUpdates.orgId,
+      projectId: schema.dailyUpdates.projectId,
       userId: schema.dailyUpdates.userId,
       visibility: schema.dailyUpdates.visibility,
     })
@@ -95,6 +96,7 @@ export async function createComment(
       payload: {
         commentId: row!.id,
         dailyUpdateId: parsed.data.dailyUpdateId,
+        projectId: update.projectId,
         actorId: ctx.actor.userId,
       },
       relatedType: "comment",
