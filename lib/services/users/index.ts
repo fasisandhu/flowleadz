@@ -6,8 +6,8 @@ import { requireRole } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
 import { env } from "@/lib/env";
 import { log } from "@/lib/log";
-import { inviteUserInputSchema, type InviteUserInput } from "./schemas";
-import { generateInvitationToken } from "./internal";
+import { inviteUserInputSchema, type InviteUserInput, acceptInvitationInputSchema, type AcceptInvitationInput } from "./schemas";
+import { generateInvitationToken, hashUserPassword } from "./internal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
@@ -82,4 +82,80 @@ export async function inviteUser(
   log.info({ email: parsed.data.email, acceptUrl }, "User invitation created");
 
   return ok({ id, token, acceptUrl });
+}
+
+type User = typeof schema.users.$inferSelect;
+
+export async function acceptInvitation(
+  db: AnyDb,
+  input: AcceptInvitationInput,
+): Promise<Result<User>> {
+  const parsed = acceptInvitationInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const expectedId = `inv_${parsed.data.token.slice(0, 24)}`;
+
+  const [invitation] = await db
+    .select()
+    .from(schema.invitations)
+    .where(eq(schema.invitations.id, expectedId))
+    .limit(1);
+  if (!invitation) return err("not_found", "Invitation not found");
+
+  if (invitation.status !== "pending") {
+    return err("conflict", `Invitation has status '${invitation.status}'`);
+  }
+  if (new Date(invitation.expiresAt).getTime() <= Date.now()) {
+    return err("conflict", "Invitation has expired");
+  }
+  if (!invitation.systemRole) {
+    return err("server", "Invitation row missing systemRole — cannot accept");
+  }
+
+  const passwordHash = await hashUserPassword(parsed.data.password);
+
+  const userIdPrefix =
+    invitation.systemRole === "customer"
+      ? "usr_cust"
+      : invitation.systemRole === "admin"
+        ? "usr_admin"
+        : "usr_emp";
+  const userId = `${userIdPrefix}_${parsed.data.token.slice(0, 16)}`;
+
+  const [user] = await db
+    .insert(schema.users)
+    .values({
+      id: userId,
+      email: invitation.email,
+      name: parsed.data.name,
+      emailVerified: true,
+      systemRole: invitation.systemRole,
+    })
+    .returning();
+
+  await db.insert(schema.accounts).values({
+    id: `acc_${userId}`,
+    userId,
+    accountId: invitation.email,
+    providerId: "credential",
+    password: passwordHash,
+  });
+
+  if (invitation.systemRole === "customer" && invitation.organizationId) {
+    await db.insert(schema.members).values({
+      id: `mbr_${userId}`,
+      userId,
+      organizationId: invitation.organizationId,
+      role: invitation.role ?? "member",
+    });
+  }
+
+  await db
+    .update(schema.invitations)
+    .set({ status: "accepted" })
+    .where(eq(schema.invitations.id, invitation.id));
+
+  return ok(user!);
 }
