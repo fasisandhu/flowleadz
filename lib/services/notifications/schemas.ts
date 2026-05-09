@@ -17,3 +17,10 @@ export const listForUserInputSchema = z.object({
   offset: z.number().int().nonnegative().optional(),
 });
 export type ListForUserInput = z.infer<typeof listForUserInputSchema>;
+
+import { idSchema } from "@/lib/services/_schemas/common";
+
+export const markReadInputSchema = z.object({
+  ids: z.array(idSchema).min(1, "At least one id is required"),
+});
+export type MarkReadInput = z.infer<typeof markReadInputSchema>;

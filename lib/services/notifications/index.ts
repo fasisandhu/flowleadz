@@ -1,7 +1,7 @@
 import * as schema from "@/lib/db/schema";
 import type { PgDatabase } from "drizzle-orm/pg-core";
-import { and, count, desc, eq, isNull } from "drizzle-orm";
-import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput } from "./schemas";
+import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
+import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput, markReadInputSchema, type MarkReadInput } from "./schemas";
 import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
@@ -101,4 +101,29 @@ export async function listForUser(
   const unreadCount = Number(unreadCountRows[0]?.value ?? 0);
 
   return ok({ notifications, unreadCount });
+}
+
+export async function markRead(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: MarkReadInput,
+): Promise<Result<{ markedCount: number }>> {
+  const parsed = markReadInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const result = await db
+    .update(schema.notifications)
+    .set({ readAt: new Date() })
+    .where(
+      and(
+        inArray(schema.notifications.id, parsed.data.ids),
+        eq(schema.notifications.userId, ctx.actor.userId),
+        isNull(schema.notifications.readAt),
+      ),
+    )
+    .returning({ id: schema.notifications.id });
+
+  return ok({ markedCount: result.length });
 }
