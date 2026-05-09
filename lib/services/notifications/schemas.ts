@@ -24,3 +24,11 @@ export const markReadInputSchema = z.object({
   ids: z.array(idSchema).min(1, "At least one id is required"),
 });
 export type MarkReadInput = z.infer<typeof markReadInputSchema>;
+
+export const upsertPreferenceInputSchema = z.object({
+  target: z.enum(["user", "org"]).optional(),
+  eventType: z.string().min(1).max(100),
+  inAppEnabled: z.boolean(),
+  emailEnabled: z.boolean(),
+});
+export type UpsertPreferenceInput = z.infer<typeof upsertPreferenceInputSchema>;

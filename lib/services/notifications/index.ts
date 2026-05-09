@@ -1,7 +1,7 @@
 import * as schema from "@/lib/db/schema";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, inArray, isNull } from "drizzle-orm";
-import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput, markReadInputSchema, type MarkReadInput } from "./schemas";
+import { emitInputSchema, type EmitInput, listForUserInputSchema, type ListForUserInput, markReadInputSchema, type MarkReadInput, upsertPreferenceInputSchema, type UpsertPreferenceInput } from "./schemas";
 import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
@@ -126,4 +126,56 @@ export async function markRead(
     .returning({ id: schema.notifications.id });
 
   return ok({ markedCount: result.length });
+}
+
+export async function upsertPreference(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: UpsertPreferenceInput,
+): Promise<Result<true>> {
+  const parsed = upsertPreferenceInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
+  }
+
+  const target = parsed.data.target ?? "user";
+  if (target === "org" && ctx.actor.role !== "admin") {
+    return err("unauthorized", "Only admins can set the org default");
+  }
+
+  const userId = target === "org" ? null : ctx.actor.userId;
+
+  const existingConds = [
+    eq(schema.notificationPreferences.orgId, ctx.orgId),
+    eq(schema.notificationPreferences.eventType, parsed.data.eventType),
+    userId === null
+      ? isNull(schema.notificationPreferences.userId)
+      : eq(schema.notificationPreferences.userId, userId),
+  ];
+
+  const [existing] = await db
+    .select({ id: schema.notificationPreferences.id })
+    .from(schema.notificationPreferences)
+    .where(and(...existingConds))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(schema.notificationPreferences)
+      .set({
+        inAppEnabled: parsed.data.inAppEnabled,
+        emailEnabled: parsed.data.emailEnabled,
+      })
+      .where(eq(schema.notificationPreferences.id, existing.id));
+  } else {
+    await db.insert(schema.notificationPreferences).values({
+      orgId: ctx.orgId,
+      userId,
+      eventType: parsed.data.eventType,
+      inAppEnabled: parsed.data.inAppEnabled,
+      emailEnabled: parsed.data.emailEnabled,
+    });
+  }
+
+  return ok(true);
 }
