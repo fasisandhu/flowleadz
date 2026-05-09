@@ -42,11 +42,30 @@ const TEST_USERS = [
 
 export async function seedTestUsers() {
   // Wipe previous test data in dependency order so FK constraints are satisfied.
+  // 0. Delete time entries first (FK → tasks, no cascade).
+  await exec(
+    `DELETE FROM time_entries WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
+  await exec(
+    `DELETE FROM project_assignments WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
   // 1. Remove tasks created by e2e users first — tasks.source_request_id has ON DELETE SET NULL
   //    which would violate tasks_source_consistency check when work_requests are deleted.
   //    Deleting tasks first cascades task_status_log, task_assignments.
   await exec(
     "DELETE FROM tasks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+  );
+  await exec(
+    `DELETE FROM tasks WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
+  await exec(
+    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
   );
   // 2. Remove work_requests submitted by e2e users (cascades work_request_status_log).
   await exec(
@@ -93,7 +112,37 @@ export async function seedTestUsers() {
     [memberId, customerId, orgId, new Date()],
   );
 
-  return { password: TEST_PASSWORD };
+  // Create a project owned by admin in the e2e org, assign the employee, and add a task.
+  const adminRow = await exec("SELECT id FROM users WHERE email = 'admin@e2e.test'");
+  const employeeRow = await exec("SELECT id FROM users WHERE email = 'employee@e2e.test'");
+  const adminId = (adminRow.rows[0] as { id: string }).id;
+  const employeeId = (employeeRow.rows[0] as { id: string }).id;
+
+  // Insert the project (UUID v7 from the DB).
+  const projectRes = await exec(
+    `INSERT INTO projects (org_id, name, description, status, service_type, created_by)
+     VALUES ($1, 'E2E project', 'Used by Playwright tests', 'active', 'seo', $2)
+     RETURNING id`,
+    [orgId, adminId],
+  );
+  const projectId = (projectRes.rows[0] as { id: string }).id;
+
+  // Assign employee to the project.
+  await exec(
+    `INSERT INTO project_assignments (user_id, project_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    [employeeId, projectId],
+  );
+
+  // Create a task.
+  const taskRes = await exec(
+    `INSERT INTO tasks (org_id, project_id, title, source, created_by)
+     VALUES ($1, $2, 'E2E task', 'admin_created', $3)
+     RETURNING id`,
+    [orgId, projectId, adminId],
+  );
+  const taskId = (taskRes.rows[0] as { id: string }).id;
+
+  return { password: TEST_PASSWORD, projectId, taskId };
 }
 
 /**
@@ -101,14 +150,35 @@ export async function seedTestUsers() {
  * in `SELECT *` queries. Cascades from users handle notifications + deliveries.
  */
 export async function cleanupTestData() {
+  // Delete time entries before tasks to avoid FK violation on time_entries.task_id.
   await exec(
-    "DELETE FROM tasks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+    `DELETE FROM time_entries WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
+  // project_assignments.user_id ON DELETE CASCADE handles cleanup of the employee
+  // assignment when users are deleted; for safety also explicit-delete via the org.
+  await exec(
+    `DELETE FROM project_assignments WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
   );
   await exec(
-    "DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')",
+    `DELETE FROM tasks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')`,
   );
-  await exec("DELETE FROM users WHERE email LIKE '%@e2e.test'");
-  await exec("DELETE FROM organizations WHERE slug = 'acme-e2e'");
+  await exec(
+    `DELETE FROM tasks WHERE project_id IN (
+       SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
+  await exec(
+    `DELETE FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
+  );
+  await exec(
+    `DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')`,
+  );
+  await exec(`DELETE FROM users WHERE email LIKE '%@e2e.test'`);
+  await exec(`DELETE FROM organizations WHERE slug = 'acme-e2e'`);
 }
 
 export async function closeSeedPool() {
