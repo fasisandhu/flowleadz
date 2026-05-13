@@ -19,7 +19,10 @@ export async function AttachmentList({
   parentId: string;
 }) {
   const r = await listAttachmentsForParentAction({ parentType, parentId });
-  const attachments = r.ok ? r.data : [];
+  if (!r.ok) {
+    return <p className="text-sm text-red-600">Could not load attachments.</p>;
+  }
+  const attachments = r.data;
 
   if (attachments.length === 0) {
     return <p className="text-sm text-slate-500">No attachments.</p>;
