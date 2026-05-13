@@ -17,7 +17,7 @@ test("customer attaches a file to a work request", async ({ page }) => {
   await page.fill("input#email", "customer@e2e.test");
   await page.fill("input#password", PWD);
   await page.click('button:has-text("Sign in")');
-  await expect(page).toHaveURL(/\/customer\/dashboard$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/customer\/dashboard$/);
 
   await page.click('a:has-text("New work request")');
   await page.fill("input#title", "Request with attachment");
@@ -25,7 +25,7 @@ test("customer attaches a file to a work request", async ({ page }) => {
   await page.click('button:has-text("Submit request")');
 
   // Lands on the detail page.
-  await expect(page).toHaveURL(/\/customer\/requests\/[^/]+$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/customer\/requests\/[^/]+$/);
   await expect(page.getByText("Request with attachment")).toBeVisible();
 
   // Upload a small text file via the AttachmentUpload widget.
@@ -37,5 +37,5 @@ test("customer attaches a file to a work request", async ({ page }) => {
   });
 
   // After successful upload + confirm + router.refresh(), the AttachmentList re-renders with the file.
-  await expect(page.getByText("evidence.txt")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("evidence.txt")).toBeVisible();
 });
