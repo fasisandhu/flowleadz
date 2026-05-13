@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { adminGetWorkRequestAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
 import { WorkRequestReviewBar } from "@/components/app/work-request-review-bar";
+import { AttachmentList } from "@/components/app/attachment-list";
 
 const PRIORITY_LABELS: Record<string, string> = {
   low: "Low",
@@ -78,6 +79,13 @@ export default async function AdminWorkRequestDetailPage({
           initialStatus={req.status}
           projects={projects}
         />
+      </section>
+
+      <Separator />
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Attachments</h2>
+        <AttachmentList parentType="work_request" parentId={requestId} />
       </section>
     </article>
   );

@@ -30,7 +30,8 @@ describe("notifications.emit", () => {
 
       const deliveries = await db.select().from(schema.notificationDeliveries);
       expect(deliveries.filter((d) => d.channel === "in_app")).toHaveLength(2);
-      expect(deliveries.filter((d) => d.channel === "email")).toHaveLength(0);
+      // email is enabled by default so each recipient also gets an email delivery
+      expect(deliveries.filter((d) => d.channel === "email")).toHaveLength(2);
     });
   });
 

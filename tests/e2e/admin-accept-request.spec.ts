@@ -16,7 +16,7 @@ test("admin accepts a work request and a task is created", async ({ page }) => {
   await page.click('button:has-text("Sign in")');
 
   // After sign-in, /admin/dashboard redirects to /admin/orgs/<id>/dashboard.
-  await expect(page).toHaveURL(/\/admin\/orgs\/[^/]+\/dashboard$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/admin\/orgs\/[^/]+\/dashboard$/);
 
   // Navigate to work requests (filter defaults to 'submitted').
   await page.click('a:has-text("Work requests")');
@@ -30,5 +30,5 @@ test("admin accepts a work request and a task is created", async ({ page }) => {
   await page.click('button:has-text("Accept request")');
 
   // The page refreshes and the review bar shows "Already accepted."
-  await expect(page.getByText(/Already accepted/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Already accepted/i)).toBeVisible();
 });

@@ -2,7 +2,10 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { getWorkRequestAction } from "@/lib/server-actions/work-requests";
+import { AttachmentList } from "@/components/app/attachment-list";
+import { AttachmentUpload } from "@/components/app/attachment-upload";
 
 const STATUS_LABELS: Record<string, string> = {
   submitted: "Submitted — awaiting review",
@@ -77,6 +80,14 @@ export default async function CustomerRequestDetailPage({
           )}
         </CardContent>
       </Card>
+
+      <Separator />
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Attachments</h2>
+        <AttachmentList parentType="work_request" parentId={requestId} />
+        <AttachmentUpload parentType="work_request" parentId={requestId} />
+      </section>
     </div>
   );
 }
