@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { adminListOrgsAction } from "@/lib/server-actions/admin/orgs";
 import { adminListNotificationsAction } from "@/lib/server-actions/admin/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 async function signOutAction() {
   "use server";
@@ -59,6 +60,7 @@ export default async function AdminOrgLayout({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} href={`/admin/orgs/${orgId}/notifications`} />
             <span className="text-sm text-slate-600">{org.name}</span>
             <span className="text-xs text-slate-400">·</span>

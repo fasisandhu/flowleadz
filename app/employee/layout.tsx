@@ -5,6 +5,7 @@ import { LayoutDashboard, FolderKanban, CheckSquare, Clock } from "lucide-react"
 import { auth } from "@/lib/better-auth/config";
 import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 async function signOutAction() {
   "use server";
@@ -50,6 +51,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} href="/employee/notifications" />
             <span className="text-sm text-slate-600">{session.user.name ?? session.user.email}</span>
             <form action={signOutAction}>
