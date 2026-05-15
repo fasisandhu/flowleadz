@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { LayoutDashboard, FolderKanban, Inbox } from "lucide-react";
 import { auth } from "@/lib/better-auth/config";
 import { headers } from "next/headers";
 import { adminListOrgsAction } from "@/lib/server-actions/admin/orgs";
@@ -43,9 +44,18 @@ export default async function AdminOrgLayout({
               Marketing CRM · Admin
             </Link>
             <nav aria-label="Admin" className="flex items-center gap-4 text-sm">
-              <Link href={`/admin/orgs/${orgId}/dashboard`} className="hover:underline">Dashboard</Link>
-              <Link href={`/admin/orgs/${orgId}/projects`} className="hover:underline">Projects</Link>
-              <Link href={`/admin/orgs/${orgId}/work-requests`} className="hover:underline">Work requests</Link>
+              <Link href={`/admin/orgs/${orgId}/dashboard`} className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+              <Link href={`/admin/orgs/${orgId}/projects`} className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <FolderKanban className="h-4 w-4" />
+                Projects
+              </Link>
+              <Link href={`/admin/orgs/${orgId}/work-requests`} className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <Inbox className="h-4 w-4" />
+                Work requests
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3">

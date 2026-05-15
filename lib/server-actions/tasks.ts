@@ -34,3 +34,7 @@ export async function listRecentActivityAction(limit: number = 20) {
 export async function getTaskAssigneesAction(taskId: string) {
   return withSessionContext((db, ctx) => tasks.listTaskAssignees(db, ctx, taskId));
 }
+
+export async function listTasksWithCardDataAction(input: { projectId?: string } = {}) {
+  return withSessionContext((db, ctx) => tasks.listTasksWithCardData(db, ctx, input));
+}

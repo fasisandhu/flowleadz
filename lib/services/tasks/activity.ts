@@ -465,3 +465,171 @@ export async function listTaskAssignees(
     .where(eq(schema.taskAssignments.taskId, taskId));
   return ok(rows);
 }
+
+export type TaskCardRow = {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  dueDate: string | null;
+  lastActivitySnippet: string | null;
+  lastActivityAt: Date | null;
+  commentCount: number;
+  totalMinutes: number;
+  attachmentCount: number;
+  assignees: { id: string; name: string | null; email: string }[];
+};
+
+export async function listTasksWithCardData(
+  db: AnyDb,
+  ctx: OrgContext,
+  input: { projectId?: string },
+): Promise<Result<TaskCardRow[]>> {
+  const baseConditions = [eq(schema.tasks.orgId, ctx.orgId)];
+  if (input.projectId) baseConditions.push(eq(schema.tasks.projectId, input.projectId));
+
+  const tasks = await (async () => {
+    if (ctx.actor.role === "employee") {
+      return db
+        .select({
+          id: schema.tasks.id,
+          title: schema.tasks.title,
+          status: schema.tasks.status,
+          dueDate: schema.tasks.dueDate,
+        })
+        .from(schema.tasks)
+        .innerJoin(
+          schema.projectAssignments,
+          eq(schema.projectAssignments.projectId, schema.tasks.projectId),
+        )
+        .where(
+          and(...baseConditions, eq(schema.projectAssignments.userId, ctx.actor.userId)),
+        );
+    }
+    if (ctx.actor.role === "customer") {
+      return db
+        .select({
+          id: schema.tasks.id,
+          title: schema.tasks.title,
+          status: schema.tasks.status,
+          dueDate: schema.tasks.dueDate,
+        })
+        .from(schema.tasks)
+        .innerJoin(schema.projects, eq(schema.projects.id, schema.tasks.projectId))
+        .where(and(...baseConditions));
+    }
+    return db
+      .select({
+        id: schema.tasks.id,
+        title: schema.tasks.title,
+        status: schema.tasks.status,
+        dueDate: schema.tasks.dueDate,
+      })
+      .from(schema.tasks)
+      .where(and(...baseConditions));
+  })();
+
+  const taskIds = tasks.map((t) => t.id);
+  if (taskIds.length === 0) return ok([]);
+
+  const assigneeRows = await db
+    .select({
+      taskId: schema.taskAssignments.taskId,
+      userId: schema.taskAssignments.userId,
+      name: schema.users.name,
+      email: schema.users.email,
+    })
+    .from(schema.taskAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.taskAssignments.userId))
+    .where(inArray(schema.taskAssignments.taskId, taskIds));
+
+  const commentRows = await db
+    .select({
+      taskId: schema.dailyUpdateTasks.taskId,
+      id: schema.comments.id,
+    })
+    .from(schema.comments)
+    .innerJoin(
+      schema.dailyUpdateTasks,
+      eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.dailyUpdateId),
+    )
+    .where(inArray(schema.dailyUpdateTasks.taskId, taskIds));
+
+  const timeRows = await db
+    .select({ taskId: schema.timeEntries.taskId, minutes: schema.timeEntries.minutes })
+    .from(schema.timeEntries)
+    .where(inArray(schema.timeEntries.taskId, taskIds));
+
+  const attachmentRows = await db
+    .select({ taskId: schema.attachments.parentId, id: schema.attachments.id })
+    .from(schema.attachments)
+    .where(
+      and(
+        eq(schema.attachments.parentType, "task"),
+        inArray(schema.attachments.parentId, taskIds),
+        eq(schema.attachments.status, "ready"),
+      ),
+    );
+
+  const updateRows = await db
+    .select({
+      taskId: schema.dailyUpdateTasks.taskId,
+      body: schema.dailyUpdates.body,
+      createdAt: schema.dailyUpdates.createdAt,
+      visibility: schema.dailyUpdates.visibility,
+    })
+    .from(schema.dailyUpdates)
+    .innerJoin(
+      schema.dailyUpdateTasks,
+      eq(schema.dailyUpdateTasks.dailyUpdateId, schema.dailyUpdates.id),
+    )
+    .where(inArray(schema.dailyUpdateTasks.taskId, taskIds))
+    .orderBy(desc(schema.dailyUpdates.createdAt));
+
+  const visibleUpdateRows =
+    ctx.actor.role === "customer"
+      ? updateRows.filter((u) => u.visibility === "customer_visible")
+      : updateRows;
+
+  const assigneesByTask = new Map<string, { id: string; name: string | null; email: string }[]>();
+  for (const a of assigneeRows) {
+    const arr = assigneesByTask.get(a.taskId) ?? [];
+    arr.push({ id: a.userId, name: a.name, email: a.email });
+    assigneesByTask.set(a.taskId, arr);
+  }
+  const commentCountByTask = new Map<string, number>();
+  for (const c of commentRows) {
+    commentCountByTask.set(c.taskId, (commentCountByTask.get(c.taskId) ?? 0) + 1);
+  }
+  const minutesByTask = new Map<string, number>();
+  for (const t of timeRows) {
+    minutesByTask.set(t.taskId, (minutesByTask.get(t.taskId) ?? 0) + t.minutes);
+  }
+  const attachmentCountByTask = new Map<string, number>();
+  for (const a of attachmentRows) {
+    attachmentCountByTask.set(a.taskId, (attachmentCountByTask.get(a.taskId) ?? 0) + 1);
+  }
+  const latestUpdateByTask = new Map<string, { body: string; createdAt: Date }>();
+  for (const u of visibleUpdateRows) {
+    if (!latestUpdateByTask.has(u.taskId)) {
+      latestUpdateByTask.set(u.taskId, { body: u.body, createdAt: u.createdAt });
+    }
+  }
+
+  const result: TaskCardRow[] = tasks.map((t) => {
+    const latest = latestUpdateByTask.get(t.id);
+    return {
+      id: t.id,
+      title: t.title,
+      status: t.status as TaskStatus,
+      dueDate: t.dueDate ?? null,
+      lastActivitySnippet: latest?.body ?? null,
+      lastActivityAt: latest?.createdAt ?? null,
+      commentCount: commentCountByTask.get(t.id) ?? 0,
+      totalMinutes: minutesByTask.get(t.id) ?? 0,
+      attachmentCount: attachmentCountByTask.get(t.id) ?? 0,
+      assignees: assigneesByTask.get(t.id) ?? [],
+    };
+  });
+
+  return ok(result);
+}

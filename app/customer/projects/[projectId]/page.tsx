@@ -1,13 +1,12 @@
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { getProjectAction } from "@/lib/server-actions/projects";
 import { listDailyUpdatesAction } from "@/lib/server-actions/daily-updates";
-import { listTasksAction } from "@/lib/server-actions/tasks";
+import { listTasksWithCardDataAction } from "@/lib/server-actions/tasks";
 import { DailyUpdateCard } from "@/components/app/daily-update-card";
-import { TaskListItem } from "@/components/app/task-list-item";
+import { TaskCard } from "@/components/app/task-card";
 
 export default async function CustomerProjectDetailPage({
   params,
@@ -24,7 +23,7 @@ export default async function CustomerProjectDetailPage({
 
   const [updatesR, tasksR] = await Promise.all([
     listDailyUpdatesAction({ projectId }),
-    listTasksAction({ projectId }),
+    listTasksWithCardDataAction({ projectId }),
   ]);
 
   const updates = updatesR.ok ? updatesR.data : [];
@@ -73,18 +72,16 @@ export default async function CustomerProjectDetailPage({
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Upcoming tasks</h2>
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Upcoming tasks</h2>
         {upcomingTasks.length === 0 ? (
           <p className="text-sm text-slate-500">Nothing on deck.</p>
         ) : (
-          <Card>
-            <CardContent className="space-y-2 p-4">
-              {upcomingTasks.map((t) => (
-                <TaskListItem key={t.id} task={t} />
-              ))}
-            </CardContent>
-          </Card>
+          <div className="space-y-2">
+            {upcomingTasks.map((t) => (
+              <TaskCard key={t.id} task={t} href={`/customer/tasks/${t.id}`} />
+            ))}
+          </div>
         )}
       </section>
     </div>

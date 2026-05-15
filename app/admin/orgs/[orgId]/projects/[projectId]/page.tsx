@@ -1,32 +1,12 @@
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { adminGetProjectAction } from "@/lib/server-actions/admin/projects";
 import { adminListProjectAssignmentsAction } from "@/lib/server-actions/admin/projects";
 import { adminListOrgMembersAction } from "@/lib/server-actions/admin/users";
-import { adminListTasksAction } from "@/lib/server-actions/admin/tasks";
+import { adminListTasksWithCardDataAction } from "@/lib/server-actions/admin/tasks";
 import { ProjectTeamManager } from "@/components/app/project-team-manager";
-
-const TASK_STATUS_LABELS: Record<string, string> = {
-  todo: "To do",
-  in_progress: "In progress",
-  blocked: "Blocked",
-  done: "Done",
-  cancelled: "Cancelled",
-};
-
-const TASK_STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  todo: "outline",
-  in_progress: "default",
-  blocked: "destructive",
-  done: "secondary",
-  cancelled: "secondary",
-};
+import { TaskCard } from "@/components/app/task-card";
 
 export default async function AdminProjectDetailPage({
   params,
@@ -46,7 +26,7 @@ export default async function AdminProjectDetailPage({
   const project = projectR.data;
 
   const [tasksR, membersR, assignmentsR] = await Promise.all([
-    adminListTasksAction(orgId, { projectId }),
+    adminListTasksWithCardDataAction(orgId, { projectId }),
     adminListOrgMembersAction(orgId),
     adminListProjectAssignmentsAction(orgId, projectId),
   ]);
@@ -92,31 +72,14 @@ export default async function AdminProjectDetailPage({
 
       <Separator />
 
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Tasks</h2>
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Tasks</h2>
         {tasks.length === 0 ? (
           <p className="text-sm text-slate-500">No tasks yet.</p>
         ) : (
           <div className="space-y-2">
             {tasks.map((t) => (
-              <Card key={t.id}>
-                <CardContent className="flex items-start justify-between gap-3 p-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">{t.title}</div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
-                      <Badge
-                        variant={TASK_STATUS_VARIANT[t.status] ?? "outline"}
-                        className="text-xs"
-                      >
-                        {TASK_STATUS_LABELS[t.status] ?? t.status}
-                      </Badge>
-                      {t.dueDate && (
-                        <span>Due {format(new Date(t.dueDate), "MMM d")}</span>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <TaskCard key={t.id} task={t} href={`/admin/orgs/${orgId}/tasks/${t.id}`} />
             ))}
           </div>
         )}

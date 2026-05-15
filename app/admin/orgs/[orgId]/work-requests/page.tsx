@@ -49,7 +49,7 @@ export default async function AdminWorkRequestsPage({
             key={f}
             href={`/admin/orgs/${orgId}/work-requests?status=${f}`}
             className={`rounded-full border px-3 py-1 ${
-              filter === f ? "border-blue-500 bg-blue-50 text-blue-700" : "hover:bg-slate-50"
+              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "hover:bg-slate-50"
             }`}
           >
             {f === "all" ? "All" : STATUS_LABELS[f]}

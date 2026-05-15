@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { LayoutDashboard, FolderKanban, FilePlus2 } from "lucide-react";
 import { auth } from "@/lib/better-auth/config";
 import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
@@ -29,14 +30,17 @@ export default async function CustomerLayout({ children }: { children: React.Rea
             <Link href="/customer/dashboard" className="font-semibold">
               Marketing CRM
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link href="/customer/dashboard" className="hover:underline">
+            <nav aria-label="Main" className="flex items-center gap-4 text-sm">
+              <Link href="/customer/dashboard" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </Link>
-              <Link href="/customer/projects" className="hover:underline">
+              <Link href="/customer/projects" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <FolderKanban className="h-4 w-4" />
                 Projects
               </Link>
-              <Link href="/customer/requests" className="hover:underline">
+              <Link href="/customer/requests" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <FilePlus2 className="h-4 w-4" />
                 Requests
               </Link>
             </nav>

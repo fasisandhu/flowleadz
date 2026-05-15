@@ -60,3 +60,13 @@ export async function adminGetTaskAssigneesAction(orgId: string, taskId: string)
     { staffOrgId: orgId },
   );
 }
+
+export async function adminListTasksWithCardDataAction(
+  orgId: string,
+  input: { projectId?: string } = {},
+) {
+  return withSessionContext(
+    (db, ctx) => tasks.listTasksWithCardData(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+}

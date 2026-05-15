@@ -346,5 +346,7 @@ export {
   listActivityForTask,
   listRecentActivity,
   listTaskAssignees,
+  listTasksWithCardData,
   type ActivityEvent,
+  type TaskCardRow,
 } from "./activity";
