@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { ok, type Result } from "@/lib/services/_result";
@@ -266,7 +266,13 @@ export async function listRecentActivity(
       .select({ id: schema.tasks.id })
       .from(schema.tasks)
       .innerJoin(schema.projects, eq(schema.projects.id, schema.tasks.projectId))
-      .where(eq(schema.tasks.orgId, ctx.orgId));
+      .where(
+        and(
+          eq(schema.tasks.orgId, ctx.orgId),
+          eq(schema.tasks.customerVisible, true),
+          isNotNull(schema.tasks.projectId),
+        ),
+      );
   })();
 
   const taskIds = Array.from(new Set(taskRows.map((r) => r.id)));
@@ -515,7 +521,7 @@ export async function listTasksWithCardData(
         })
         .from(schema.tasks)
         .innerJoin(schema.projects, eq(schema.projects.id, schema.tasks.projectId))
-        .where(and(...baseConditions));
+        .where(and(...baseConditions, eq(schema.tasks.customerVisible, true), isNotNull(schema.tasks.projectId)));
     }
     return db
       .select({
