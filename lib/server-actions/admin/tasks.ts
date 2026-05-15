@@ -39,3 +39,17 @@ export async function adminChangeTaskStatusAction(orgId: string, input: tasks.Ch
   }
   return r;
 }
+
+export async function adminGetTaskActivityAction(orgId: string, taskId: string) {
+  return withSessionContext(
+    (db, ctx) => tasks.listActivityForTask(db, ctx, taskId),
+    { staffOrgId: orgId },
+  );
+}
+
+export async function adminListRecentActivityAction(orgId: string, limit: number = 20) {
+  return withSessionContext(
+    (db, ctx) => tasks.listRecentActivity(db, ctx, limit),
+    { staffOrgId: orgId },
+  );
+}
