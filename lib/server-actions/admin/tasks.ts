@@ -53,3 +53,10 @@ export async function adminListRecentActivityAction(orgId: string, limit: number
     { staffOrgId: orgId },
   );
 }
+
+export async function adminGetTaskAssigneesAction(orgId: string, taskId: string) {
+  return withSessionContext(
+    (db, ctx) => tasks.listTaskAssignees(db, ctx, taskId),
+    { staffOrgId: orgId },
+  );
+}
