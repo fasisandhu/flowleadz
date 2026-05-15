@@ -30,7 +30,7 @@ test("employee opens task detail and posts an update", async ({ page }) => {
   // Open "Post update" composer.
   await page.click('button:has-text("Post update")');
   await page.fill("textarea#update-body", "First update from the task detail");
-  await page.click('button:has-text("Post update")');
+  await page.click('button[type="submit"]:has-text("Post update")');
 
   // New update appears in the feed.
   await expect(page.getByText("First update from the task detail")).toBeVisible();
