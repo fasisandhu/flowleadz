@@ -82,7 +82,7 @@ export function NotificationsList({ initial }: { initial: Notification[] }) {
               </CardContent>
             );
             return (
-              <Card key={n.id} className={n.readAt ? "" : "border-blue-300"}>
+              <Card key={n.id} className={n.readAt ? "" : "border-indigo-300 dark:border-indigo-700"}>
                 {href ? (
                   <Link href={href} className="block">
                     {inner}
