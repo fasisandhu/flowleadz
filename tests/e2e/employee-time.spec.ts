@@ -16,19 +16,25 @@ test("employee logs time on a task and sees it in My time", async ({ page }) => 
   await page.click('button:has-text("Sign in")');
   await expect(page).toHaveURL(/\/employee\/dashboard$/);
 
-  // Click "Log time" on the dashboard (uses the first active project).
-  await page.click('a:has-text("Log time")');
-  await expect(page).toHaveURL(/\/employee\/projects\/[^/]+\/time\/new$/);
+  // Navigate to My tasks (the dashboard no longer has a "Log time" quick link).
+  await page.click('a:has-text("My tasks")');
+  await expect(page).toHaveURL(/\/employee\/tasks/);
 
-  // Fill the form. Task picker auto-selects the first task.
-  await page.fill("input#minutes", "45");
-  await page.fill("textarea#note", "E2E logged time");
+  // Open the seeded "E2E task".
+  await page.click('text=E2E task');
+  await expect(page).toHaveURL(/\/employee\/tasks\/[^/]+$/);
+
+  // Open the "Log time" inline composer in the task action bar.
   await page.click('button:has-text("Log time")');
 
-  // Lands on project detail.
-  await expect(page).toHaveURL(/\/employee\/projects\/[^/]+$/);
+  // Fill the inline form. Field ids come from log-time-inline-form.tsx.
+  await page.fill("input#log-minutes", "45");
+  await page.fill("input#log-note", "E2E logged time");
 
-  // Navigate to My time — hard navigation to ensure a fresh server render.
+  // Submit. Differentiate the submit button from the action-bar toggle.
+  await page.click('button[type="submit"]:has-text("Log time")');
+
+  // Navigate to My time. Hard navigation to ensure a fresh server render.
   await page.goto("/employee/time");
   await expect(page).toHaveURL(/\/employee\/time$/);
   await page.waitForLoadState("networkidle");

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { LayoutDashboard, FolderKanban, CheckSquare, Clock } from "lucide-react";
 import { auth } from "@/lib/better-auth/config";
 import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
@@ -29,17 +30,21 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
             <Link href="/employee/dashboard" className="font-semibold">
               Marketing CRM
             </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link href="/employee/dashboard" className="hover:underline">
+            <nav aria-label="Main" className="flex items-center gap-4 text-sm">
+              <Link href="/employee/dashboard" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <LayoutDashboard className="h-4 w-4" />
                 Dashboard
               </Link>
-              <Link href="/employee/projects" className="hover:underline">
+              <Link href="/employee/projects" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <FolderKanban className="h-4 w-4" />
                 Projects
               </Link>
-              <Link href="/employee/tasks" className="hover:underline">
+              <Link href="/employee/tasks" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <CheckSquare className="h-4 w-4" />
                 My tasks
               </Link>
-              <Link href="/employee/time" className="hover:underline">
+              <Link href="/employee/time" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900">
+                <Clock className="h-4 w-4" />
                 Time
               </Link>
             </nav>

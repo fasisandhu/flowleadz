@@ -22,3 +22,19 @@ export async function changeTaskStatusAction(input: tasks.ChangeTaskStatusInput)
   }
   return result;
 }
+
+export async function getTaskActivityAction(taskId: string) {
+  return withSessionContext((db, ctx) => tasks.listActivityForTask(db, ctx, taskId));
+}
+
+export async function listRecentActivityAction(limit: number = 20) {
+  return withSessionContext((db, ctx) => tasks.listRecentActivity(db, ctx, limit));
+}
+
+export async function getTaskAssigneesAction(taskId: string) {
+  return withSessionContext((db, ctx) => tasks.listTaskAssignees(db, ctx, taskId));
+}
+
+export async function listTasksWithCardDataAction(input: { projectId?: string } = {}) {
+  return withSessionContext((db, ctx) => tasks.listTasksWithCardData(db, ctx, input));
+}

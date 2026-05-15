@@ -1,23 +1,10 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { PageHeader } from "@/components/app/page-header";
+import { ActivityFeed } from "@/components/app/activity-feed";
 import { adminListWorkRequestsAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  submitted: "default",
-  accepted: "secondary",
-  rejected: "destructive",
-  duplicate: "outline",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  submitted: "Submitted",
-  accepted: "Accepted",
-  rejected: "Rejected",
-  duplicate: "Duplicate",
-};
+import { adminListRecentActivityAction } from "@/lib/server-actions/admin/tasks";
 
 export default async function AdminDashboardPage({
   params,
@@ -26,19 +13,19 @@ export default async function AdminDashboardPage({
 }) {
   const { orgId } = await params;
 
-  const [submittedR, projectsR, recentR] = await Promise.all([
+  const [submittedR, projectsR, activityR] = await Promise.all([
     adminListWorkRequestsAction(orgId, { status: "submitted" }),
     adminListProjectsAction(orgId, { status: "active" }),
-    adminListWorkRequestsAction(orgId, {}),
+    adminListRecentActivityAction(orgId, 20),
   ]);
 
   const pending = submittedR.ok ? submittedR.data.length : 0;
   const activeProjects = projectsR.ok ? projectsR.data.length : 0;
-  const recent = recentR.ok ? recentR.data.slice(0, 5) : [];
+  const activity = activityR.ok ? activityR.data : [];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <PageHeader title="Dashboard" />
 
       <div className="grid gap-3 md:grid-cols-3">
         <Card>
@@ -49,7 +36,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/work-requests?status=submitted`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline"
             >
               Review queue →
             </Link>
@@ -63,7 +50,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/projects`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline"
             >
               View all →
             </Link>
@@ -77,7 +64,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/projects/new`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline"
             >
               + New project →
             </Link>
@@ -85,34 +72,12 @@ export default async function AdminDashboardPage({
         </Card>
       </div>
 
-      <section>
-        <h2 className="mb-2 text-lg font-medium">Recent work requests</h2>
-        {recent.length === 0 ? (
-          <p className="text-sm text-slate-500">None yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {recent.map((r) => (
-              <Card key={r.id}>
-                <CardContent className="flex items-center justify-between p-3 text-sm">
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/admin/orgs/${orgId}/work-requests/${r.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {r.title}
-                    </Link>
-                    <div className="mt-0.5 text-xs text-slate-500">
-                      {format(new Date(r.createdAt), "MMM d, yyyy h:mm a")}
-                    </div>
-                  </div>
-                  <Badge variant={STATUS_VARIANT[r.status] ?? "outline"} className="text-xs">
-                    {STATUS_LABELS[r.status] ?? r.status}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Recent activity</h2>
+        <ActivityFeed
+          events={activity}
+          taskHrefFor={(taskId) => `/admin/orgs/${orgId}/tasks/${taskId}`}
+        />
       </section>
     </div>
   );

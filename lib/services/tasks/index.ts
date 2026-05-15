@@ -341,3 +341,12 @@ export async function getTask(
   if (!row) return err("not_found", "Task not found");
   return ok(row);
 }
+
+export {
+  listActivityForTask,
+  listRecentActivity,
+  listTaskAssignees,
+  listTasksWithCardData,
+  type ActivityEvent,
+  type TaskCardRow,
+} from "./activity";

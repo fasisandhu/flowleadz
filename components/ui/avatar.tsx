@@ -1,109 +1,112 @@
-"use client"
+import { cn } from "@/lib/utils/cn";
 
-import * as React from "react"
-import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
+type AvatarSize = "xs" | "sm" | "md" | "lg";
 
-import { cn } from "@/lib/utils/cn"
+const SIZE_CLASSES: Record<AvatarSize, string> = {
+  xs: "h-5 w-5 text-[10px]",
+  sm: "h-6 w-6 text-xs",
+  md: "h-8 w-8 text-sm",
+  lg: "h-10 w-10 text-base",
+};
 
-function Avatar({
+// Eight-tint deterministic palette. Chosen so initials remain readable
+// on the bg and so adjacent avatars don't look like a stripe.
+const PALETTE = [
+  "bg-indigo-500 text-white",
+  "bg-emerald-500 text-white",
+  "bg-amber-500 text-white",
+  "bg-rose-500 text-white",
+  "bg-sky-500 text-white",
+  "bg-violet-500 text-white",
+  "bg-fuchsia-500 text-white",
+  "bg-teal-500 text-white",
+] as const;
+
+function hash(input: string): number {
+  let h = 0;
+  for (let i = 0; i < input.length; i++) {
+    h = (h * 31 + input.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function initialsFrom(name: string | null | undefined, email: string | null | undefined): string {
+  const source = (name ?? "").trim();
+  if (source) {
+    const parts = source.split(/\s+/);
+    if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+    return parts[0]!.slice(0, 2).toUpperCase();
+  }
+  if (email) return email[0]!.toUpperCase();
+  return "?";
+}
+
+export function Avatar({
+  userId,
+  name,
+  email,
+  size = "sm",
   className,
-  size = "default",
-  ...props
-}: AvatarPrimitive.Root.Props & {
-  size?: "default" | "sm" | "lg"
+}: {
+  userId: string;
+  name?: string | null;
+  email?: string | null;
+  size?: AvatarSize;
+  className?: string;
 }) {
-  return (
-    <AvatarPrimitive.Root
-      data-slot="avatar"
-      data-size={size}
-      className={cn(
-        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 dark:after:mix-blend-lighten",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
-  return (
-    <AvatarPrimitive.Image
-      data-slot="avatar-image"
-      className={cn(
-        "aspect-square size-full rounded-full object-cover",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function AvatarFallback({
-  className,
-  ...props
-}: AvatarPrimitive.Fallback.Props) {
-  return (
-    <AvatarPrimitive.Fallback
-      data-slot="avatar-fallback"
-      className={cn(
-        "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
+  const initials = initialsFrom(name, email);
+  const palette = PALETTE[hash(userId) % PALETTE.length]!;
+  const label = name ?? email ?? initials;
   return (
     <span
-      data-slot="avatar-badge"
       className={cn(
-        "absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground bg-blend-color ring-2 ring-background select-none",
-        "group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden",
-        "group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2",
-        "group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2",
-        className
+        "inline-flex select-none items-center justify-center rounded-full font-medium",
+        SIZE_CLASSES[size],
+        palette,
+        className,
       )}
-      {...props}
-    />
-  )
+      aria-label={label}
+      title={label}
+    >
+      {initials}
+    </span>
+  );
 }
 
-function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
+export function AvatarStack({
+  users,
+  max = 3,
+  size = "sm",
+}: {
+  users: { id: string; name?: string | null; email?: string | null }[];
+  max?: number;
+  size?: AvatarSize;
+}) {
+  const shown = users.slice(0, max);
+  const overflow = users.length - shown.length;
   return (
-    <div
-      data-slot="avatar-group"
-      className={cn(
-        "group/avatar-group flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background",
-        className
+    <div className="flex -space-x-1.5">
+      {shown.map((u) => (
+        <Avatar
+          key={u.id}
+          userId={u.id}
+          name={u.name}
+          email={u.email}
+          size={size}
+          className="ring-2 ring-white"
+        />
+      ))}
+      {overflow > 0 && (
+        <span
+          className={cn(
+            SIZE_CLASSES[size],
+            "inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-700 ring-2 ring-white",
+          )}
+          aria-label={`${overflow} more`}
+        >
+          +{overflow}
+        </span>
       )}
-      {...props}
-    />
-  )
-}
-
-function AvatarGroupCount({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="avatar-group-count"
-      className={cn(
-        "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  AvatarGroup,
-  AvatarGroupCount,
-  AvatarBadge,
+    </div>
+  );
 }
