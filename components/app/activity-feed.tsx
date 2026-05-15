@@ -14,7 +14,7 @@ export function ActivityFeed({
 }) {
   if (events.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+      <p className="rounded-lg border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
         No activity yet.
       </p>
     );

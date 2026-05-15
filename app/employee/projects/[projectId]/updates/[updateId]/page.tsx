@@ -30,14 +30,14 @@ export default async function EmployeeDailyUpdatePage({
   const r = await getDailyUpdateAction(updateId);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{r.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{r.error.message}</p>;
   }
   const u = r.data;
 
   return (
     <article className="space-y-6">
       <header>
-        <div className="mb-2 flex items-center gap-2 text-xs text-slate-500">
+        <div className="mb-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <Badge variant="secondary">{ACTIVITY_LABELS[u.activityType] ?? u.activityType}</Badge>
           <Badge variant={u.visibility === "internal_only" ? "outline" : "default"}>
             {VISIBILITY_LABELS[u.visibility] ?? u.visibility}
@@ -47,8 +47,8 @@ export default async function EmployeeDailyUpdatePage({
         <h1 className="text-xl font-semibold">Daily update</h1>
       </header>
 
-      <div className="rounded-md border bg-white p-4">
-        <p className="whitespace-pre-wrap text-sm text-slate-800">{u.body}</p>
+      <div className="rounded-md border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{u.body}</p>
       </div>
 
       <Separator />

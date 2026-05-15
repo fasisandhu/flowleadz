@@ -86,7 +86,7 @@ export function ProjectCreateForm({ orgId }: { orgId: string }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        {fieldErrors.name && <p className="text-sm text-red-600">{fieldErrors.name}</p>}
+        {fieldErrors.name && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.name}</p>}
       </div>
 
       <div className="space-y-2">
@@ -118,7 +118,7 @@ export function ProjectCreateForm({ orgId }: { orgId: string }) {
               ))}
             </SelectContent>
           </Select>
-          {fieldErrors.serviceType && <p className="text-sm text-red-600">{fieldErrors.serviceType}</p>}
+          {fieldErrors.serviceType && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.serviceType}</p>}
         </div>
 
         <div className="space-y-2">
@@ -132,7 +132,7 @@ export function ProjectCreateForm({ orgId }: { orgId: string }) {
             onChange={(e) => setHourlyRate(e.target.value)}
             placeholder="e.g. 150.00"
           />
-          {fieldErrors.hourlyRateCents && <p className="text-sm text-red-600">{fieldErrors.hourlyRateCents}</p>}
+          {fieldErrors.hourlyRateCents && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.hourlyRateCents}</p>}
         </div>
       </div>
 

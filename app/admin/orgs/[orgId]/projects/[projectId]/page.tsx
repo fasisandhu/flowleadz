@@ -21,7 +21,7 @@ export default async function AdminProjectDetailPage({
       projectR.error.code === "unauthorized"
     )
       notFound();
-    return <p className="text-sm text-red-600">{projectR.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{projectR.error.message}</p>;
   }
   const project = projectR.data;
 
@@ -44,11 +44,11 @@ export default async function AdminProjectDetailPage({
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">{project.name}</h1>
-          <p className="mt-1 text-sm text-slate-600 capitalize">
+          <p className="mt-1 text-sm text-slate-600 capitalize dark:text-slate-300">
             {project.serviceType.replace(/_/g, " ")}
           </p>
           {project.description && (
-            <p className="mt-3 max-w-prose whitespace-pre-wrap text-sm text-slate-700">
+            <p className="mt-3 max-w-prose whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
               {project.description}
             </p>
           )}
@@ -75,7 +75,7 @@ export default async function AdminProjectDetailPage({
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Tasks</h2>
         {tasks.length === 0 ? (
-          <p className="text-sm text-slate-500">No tasks yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No tasks yet.</p>
         ) : (
           <div className="space-y-2">
             {tasks.map((t) => (

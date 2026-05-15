@@ -37,7 +37,7 @@ export function CommentReplyForm({ dailyUpdateId }: { dailyUpdateId: string }) {
         minLength={1}
         maxLength={10000}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       <div className="flex justify-end">
         <Button type="submit" disabled={pending || !body.trim()}>
           {pending ? "Posting…" : "Post comment"}

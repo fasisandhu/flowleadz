@@ -137,7 +137,7 @@ export function PostUpdateForm({
         <button
           type="button"
           onClick={() => setShowAdvanced((v) => !v)}
-          className="text-xs text-slate-500 hover:text-slate-700"
+          className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
         >
           {showAdvanced ? "Hide options" : "More options"}
         </button>

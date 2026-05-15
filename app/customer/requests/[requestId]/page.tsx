@@ -37,7 +37,7 @@ export default async function CustomerRequestDetailPage({
   const r = await getWorkRequestAction(requestId);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{r.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{r.error.message}</p>;
   }
   const req = r.data;
 
@@ -46,7 +46,7 @@ export default async function CustomerRequestDetailPage({
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold">{req.title}</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Submitted {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
           </p>
         </div>
@@ -61,18 +61,18 @@ export default async function CustomerRequestDetailPage({
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
-            <span className="text-slate-500">Priority:</span>{" "}
+            <span className="text-slate-500 dark:text-slate-400">Priority:</span>{" "}
             {PRIORITY_LABELS[req.priorityHint] ?? req.priorityHint}
           </div>
           {req.description && (
             <div>
-              <div className="mb-1 text-slate-500">Description</div>
+              <div className="mb-1 text-slate-500 dark:text-slate-400">Description</div>
               <p className="whitespace-pre-wrap">{req.description}</p>
             </div>
           )}
           {req.rejectionReason && (
             <div>
-              <div className="mb-1 text-slate-500">
+              <div className="mb-1 text-slate-500 dark:text-slate-400">
                 {req.status === "duplicate" ? "Note" : "Reason"}
               </div>
               <p className="whitespace-pre-wrap">{req.rejectionReason}</p>

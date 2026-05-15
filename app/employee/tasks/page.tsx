@@ -42,7 +42,7 @@ export default async function EmployeeTasksPage({
             key={f}
             href={`/employee/tasks?status=${f}`}
             className={`rounded-full border px-3 py-1 ${
-              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "hover:bg-slate-50"
+              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300" : "hover:bg-slate-50 dark:hover:bg-slate-800"
             }`}
           >
             {f === "all" ? "All" : f === "open" ? "Open" : STATUS_LABELS[f]}
@@ -51,7 +51,7 @@ export default async function EmployeeTasksPage({
       </div>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-slate-500">No tasks match.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No tasks match.</p>
       ) : (
         <div className="space-y-2">
           {tasks.map((t) => (

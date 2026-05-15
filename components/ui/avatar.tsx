@@ -93,14 +93,14 @@ export function AvatarStack({
           name={u.name}
           email={u.email}
           size={size}
-          className="ring-2 ring-white"
+          className="ring-2 ring-white dark:ring-slate-900"
         />
       ))}
       {overflow > 0 && (
         <span
           className={cn(
             SIZE_CLASSES[size],
-            "inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-700 ring-2 ring-white",
+            "inline-flex items-center justify-center rounded-full bg-slate-200 text-slate-700 ring-2 ring-white dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-900",
           )}
           aria-label={`${overflow} more`}
         >

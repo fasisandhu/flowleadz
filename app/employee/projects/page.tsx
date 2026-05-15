@@ -29,7 +29,7 @@ export default async function EmployeeProjectsPage() {
       <h1 className="text-2xl font-semibold">Projects</h1>
 
       {projects.length === 0 ? (
-        <p className="text-sm text-slate-500">No projects assigned to you yet.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No projects assigned to you yet.</p>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {projects.map((p) => (
@@ -49,7 +49,7 @@ export default async function EmployeeProjectsPage() {
                 <CardDescription>{SERVICE_TYPE_LABELS[p.serviceType] ?? p.serviceType}</CardDescription>
               </CardHeader>
               {p.description && (
-                <CardContent className="text-sm text-slate-600 line-clamp-2">
+                <CardContent className="text-sm text-slate-600 line-clamp-2 dark:text-slate-300">
                   {p.description}
                 </CardContent>
               )}

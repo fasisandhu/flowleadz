@@ -89,7 +89,7 @@ export function WorkRequestReviewBar({
 
   if (initialStatus !== "submitted") {
     return (
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Already {initialStatus}. No further action available.
       </p>
     );

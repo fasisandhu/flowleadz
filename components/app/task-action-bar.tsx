@@ -36,7 +36,7 @@ export function TaskActionBar({
   if (!showAny) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
       <div className="flex flex-wrap gap-2">
         {canPostUpdate && (
           <Button
@@ -91,7 +91,7 @@ export function TaskActionBar({
         {mode === "log" && <LogTimeInlineForm taskId={taskId} onLogged={close} />}
         {mode === "status" && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-600">Current status:</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">Current status:</span>
             <TaskStatusChanger taskId={taskId} currentStatus={currentStatus} />
           </div>
         )}

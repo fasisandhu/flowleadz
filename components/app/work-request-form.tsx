@@ -68,7 +68,7 @@ export function WorkRequestForm({ projects }: { projects: ProjectOption[] }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
-        {fieldErrors.title && <p className="text-sm text-red-600">{fieldErrors.title}</p>}
+        {fieldErrors.title && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.title}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>

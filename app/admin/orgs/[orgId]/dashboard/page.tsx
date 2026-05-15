@@ -36,7 +36,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/work-requests?status=submitted`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
             >
               Review queue →
             </Link>
@@ -50,7 +50,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/projects`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
             >
               View all →
             </Link>
@@ -64,7 +64,7 @@ export default async function AdminDashboardPage({
           <CardContent>
             <Link
               href={`/admin/orgs/${orgId}/projects/new`}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
             >
               + New project →
             </Link>
