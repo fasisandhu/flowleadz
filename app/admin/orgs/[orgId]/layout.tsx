@@ -7,6 +7,7 @@ import { adminListOrgsAction } from "@/lib/server-actions/admin/orgs";
 import { adminListNotificationsAction } from "@/lib/server-actions/admin/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
 
 async function signOutAction() {
   "use server";
@@ -26,6 +27,12 @@ export default async function AdminOrgLayout({
 }) {
   const { orgId } = await params;
 
+  const ADMIN_NAV: MobileNavLink[] = [
+    { href: `/admin/orgs/${orgId}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
+    { href: `/admin/orgs/${orgId}/projects`, label: "Projects", icon: FolderKanban },
+    { href: `/admin/orgs/${orgId}/work-requests`, label: "Work requests", icon: Inbox },
+  ];
+
   const orgsR = await adminListOrgsAction();
   if (!orgsR.ok) notFound();
   const org = orgsR.data.find((o) => o.id === orgId);
@@ -41,10 +48,11 @@ export default async function AdminOrgLayout({
       <header className="border-b bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
+            <MobileNavSheet links={ADMIN_NAV} />
             <Link href={`/admin/orgs/${orgId}/dashboard`} className="font-semibold">
               Marketing CRM · Admin
             </Link>
-            <nav aria-label="Admin" className="flex items-center gap-4 text-sm">
+            <nav aria-label="Admin" className="hidden items-center gap-4 text-sm md:flex">
               <Link href={`/admin/orgs/${orgId}/dashboard`} className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-slate-50">
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard

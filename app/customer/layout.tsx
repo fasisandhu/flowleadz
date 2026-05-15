@@ -6,6 +6,13 @@ import { auth } from "@/lib/better-auth/config";
 import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
+
+const CUSTOMER_NAV: MobileNavLink[] = [
+  { href: "/customer/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/customer/projects", label: "Projects", icon: FolderKanban },
+  { href: "/customer/requests", label: "Requests", icon: FilePlus2 },
+];
 
 async function signOutAction() {
   "use server";
@@ -28,10 +35,11 @@ export default async function CustomerLayout({ children }: { children: React.Rea
       <header className="border-b bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
+            <MobileNavSheet links={CUSTOMER_NAV} />
             <Link href="/customer/dashboard" className="font-semibold">
               Marketing CRM
             </Link>
-            <nav aria-label="Main" className="flex items-center gap-4 text-sm">
+            <nav aria-label="Main" className="hidden items-center gap-4 text-sm md:flex">
               <Link href="/customer/dashboard" className="inline-flex items-center gap-1.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-slate-50">
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard

@@ -61,7 +61,7 @@ export function ActivityFeedEvent({
     case "comment":
       return (
         <div className="flex items-start gap-2 pl-6 text-sm">
-          <MessageCircle className="mt-0.5 h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+          <MessageCircle className="mt-0.5 hidden h-4 w-4 text-slate-400 dark:text-slate-500 sm:inline-block" aria-hidden="true" />
           <Avatar
             userId={event.authorId}
             name={event.authorName}
@@ -81,7 +81,7 @@ export function ActivityFeedEvent({
     case "status_change":
       return (
         <div className="flex items-center gap-2 text-sm">
-          <CircleDot className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+          <CircleDot className="hidden h-4 w-4 text-slate-400 dark:text-slate-500 sm:inline-block" aria-hidden="true" />
           <Avatar
             userId={event.actorId}
             name={event.actorName}
@@ -108,7 +108,7 @@ export function ActivityFeedEvent({
     case "time_log":
       return (
         <div className="flex items-center gap-2 text-sm">
-          <Clock className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+          <Clock className="hidden h-4 w-4 text-slate-400 dark:text-slate-500 sm:inline-block" aria-hidden="true" />
           <Avatar
             userId={event.actorId}
             name={event.actorName}
@@ -129,7 +129,7 @@ export function ActivityFeedEvent({
     case "attachment":
       return (
         <div className="flex items-center gap-2 text-sm">
-          <Paperclip className="h-4 w-4 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+          <Paperclip className="hidden h-4 w-4 text-slate-400 dark:text-slate-500 sm:inline-block" aria-hidden="true" />
           <Avatar
             userId={event.uploaderId}
             name={event.uploaderName}
