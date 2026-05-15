@@ -345,5 +345,6 @@ export async function getTask(
 export {
   listActivityForTask,
   listRecentActivity,
+  listTaskAssignees,
   type ActivityEvent,
 } from "./activity";

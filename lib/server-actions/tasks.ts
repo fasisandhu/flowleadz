@@ -30,3 +30,7 @@ export async function getTaskActivityAction(taskId: string) {
 export async function listRecentActivityAction(limit: number = 20) {
   return withSessionContext((db, ctx) => tasks.listRecentActivity(db, ctx, limit));
 }
+
+export async function getTaskAssigneesAction(taskId: string) {
+  return withSessionContext((db, ctx) => tasks.listTaskAssignees(db, ctx, taskId));
+}

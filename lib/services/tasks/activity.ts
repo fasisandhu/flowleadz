@@ -445,3 +445,23 @@ export async function listRecentActivity(
 
   return ok(events.slice(0, limit));
 }
+
+export async function listTaskAssignees(
+  db: AnyDb,
+  ctx: OrgContext,
+  taskId: string,
+): Promise<Result<{ id: string; name: string | null; email: string }[]>> {
+  const access = await requireTaskRead(db, ctx, taskId);
+  if (!access.ok) return access;
+
+  const rows = await db
+    .select({
+      id: schema.taskAssignments.userId,
+      name: schema.users.name,
+      email: schema.users.email,
+    })
+    .from(schema.taskAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.taskAssignments.userId))
+    .where(eq(schema.taskAssignments.taskId, taskId));
+  return ok(rows);
+}
