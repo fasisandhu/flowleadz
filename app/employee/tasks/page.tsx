@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listTasksWithCardDataAction } from "@/lib/server-actions/tasks";
 import { TaskCard } from "@/components/app/task-card";
+import { EmptyState } from "@/components/app/empty-state";
+import { EmptyTasksIllustration } from "@/components/app/illustrations/empty-tasks";
 
 const STATUS_LABELS: Record<string, string> = {
   todo: "To do",
@@ -51,7 +53,11 @@ export default async function EmployeeTasksPage({
       </div>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">No tasks match.</p>
+        <EmptyState
+          illustration={EmptyTasksIllustration}
+          title="No tasks match"
+          description="Try a different filter or wait until you're assigned to something."
+        />
       ) : (
         <div className="space-y-2">
           {tasks.map((t) => (

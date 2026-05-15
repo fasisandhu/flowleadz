@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listProjectsAction } from "@/lib/server-actions/projects";
+import { EmptyState } from "@/components/app/empty-state";
+import { EmptyProjectsIllustration } from "@/components/app/illustrations/empty-projects";
 
 const SERVICE_TYPE_LABELS: Record<string, string> = {
   seo: "SEO",
@@ -29,7 +31,11 @@ export default async function CustomerProjectsPage() {
       <h1 className="text-2xl font-semibold">Projects</h1>
 
       {projects.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">No projects yet.</p>
+        <EmptyState
+          illustration={EmptyProjectsIllustration}
+          title="No projects yet"
+          description="You'll see projects here once they're set up."
+        />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {projects.map((p) => (

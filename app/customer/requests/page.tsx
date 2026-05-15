@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils/cn";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listWorkRequestsAction } from "@/lib/server-actions/work-requests";
+import { EmptyState } from "@/components/app/empty-state";
+import { EmptyRequestsIllustration } from "@/components/app/illustrations/empty-requests";
 
 const STATUS_LABELS: Record<string, string> = {
   submitted: "Submitted",
@@ -43,7 +45,12 @@ export default async function CustomerRequestsPage() {
       </div>
 
       {requests.length === 0 ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">No requests yet.</p>
+        <EmptyState
+          illustration={EmptyRequestsIllustration}
+          title="No work requests yet"
+          description="Click 'New work request' to submit your first one."
+          action={<Link href="/customer/requests/new" className={cn(buttonVariants())}>New work request</Link>}
+        />
       ) : (
         <div className="space-y-2">
           {requests.map((req) => (

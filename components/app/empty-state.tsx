@@ -2,18 +2,24 @@ import * as React from "react";
 
 export function EmptyState({
   icon: Icon,
+  illustration: Illustration,
   title,
   description,
   action,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
+  illustration?: React.ComponentType<{ className?: string }>;
   title: string;
   description?: string;
   action?: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-200 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
-      <Icon className="h-8 w-8 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+      {Illustration ? (
+        <Illustration className="h-20 w-20 text-indigo-500 dark:text-indigo-400" />
+      ) : Icon ? (
+        <Icon className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+      ) : null}
       <div>
         <p className="text-sm font-medium text-slate-900 dark:text-slate-50">{title}</p>
         {description && (
