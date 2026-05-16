@@ -110,7 +110,7 @@ export default async function AdminTaskDetailPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Activity</h2>
-        <ActivityFeed events={activity} />
+        <ActivityFeed events={activity} orgId={orgId} />
       </section>
 
       <section className="space-y-3">

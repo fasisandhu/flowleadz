@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { MessageCircle, Pencil } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { UpdateEditForm } from "./update-edit-form";
+import { CommentReplyForm } from "./comment-reply-form";
 
 export function UpdateFeedCard({
   event,
   ts,
   taskHref,
+  orgId,
 }: {
   event: {
     id: string;
@@ -23,8 +26,11 @@ export function UpdateFeedCard({
   };
   ts: string;
   taskHref?: string;
+  /** Pass on admin routes so the inline reply uses the right org context. */
+  orgId?: string;
 }) {
   const [editing, setEditing] = useState(false);
+  const [replying, setReplying] = useState(false);
 
   if (editing) {
     return (
@@ -75,12 +81,32 @@ export function UpdateFeedCard({
       <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
         {event.body}
       </p>
-      {taskHref && (
-        <footer className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-          <Link href={taskHref} className="hover:underline">
+      <footer className="mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          onClick={() => setReplying((v) => !v)}
+        >
+          <MessageCircle className="mr-1 h-3 w-3" />
+          {replying ? "Cancel" : "Comment"}
+        </Button>
+        {taskHref && (
+          <Link href={taskHref} className="ml-auto hover:underline">
             View task →
           </Link>
-        </footer>
+        )}
+      </footer>
+      {replying && (
+        <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+          <CommentReplyForm
+            parentType="daily_update"
+            parentId={event.id}
+            orgId={orgId}
+            onPosted={() => setReplying(false)}
+          />
+        </div>
       )}
     </article>
   );

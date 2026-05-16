@@ -21,15 +21,18 @@ function formatMinutes(m: number): string {
 export function ActivityFeedEvent({
   event,
   taskHref,
+  orgId,
 }: {
   event: ActivityEvent;
   taskHref?: string;
+  /** Pass on admin routes so inline reply uses the right org context. */
+  orgId?: string;
 }) {
   const ts = relativeTime(event.createdAt);
 
   switch (event.kind) {
     case "update":
-      return <UpdateFeedCard event={event} ts={ts} taskHref={taskHref} />;
+      return <UpdateFeedCard event={event} ts={ts} taskHref={taskHref} orgId={orgId} />;
 
     case "comment":
       return (

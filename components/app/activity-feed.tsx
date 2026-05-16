@@ -8,9 +8,12 @@ function dateKey(d: Date | string): string {
 export function ActivityFeed({
   events,
   taskHrefFor,
+  orgId,
 }: {
   events: ActivityEvent[];
   taskHrefFor?: (taskId: string) => string;
+  /** Pass on admin routes so inline reply on update cards uses the right context. */
+  orgId?: string;
 }) {
   if (events.length === 0) {
     return (
@@ -38,6 +41,7 @@ export function ActivityFeed({
               key={`${e.kind}-${e.id}`}
               event={e}
               taskHref={taskHrefFor?.(e.taskId)}
+              orgId={orgId}
             />
           ))}
         </section>
