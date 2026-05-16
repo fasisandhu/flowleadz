@@ -5,6 +5,7 @@ import { err, ok, type Result } from "@/lib/services/_result";
 import { requireOrgAccess, requireRole, requireTaskRead, requireTaskWrite } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
 import { emit } from "@/lib/services/notifications";
+import { notify } from "@/lib/services/realtime/notify";
 import {
   createTaskInputSchema, type CreateTaskInput,
   updateTaskInputSchema, type UpdateTaskInput,
@@ -173,6 +174,17 @@ export async function changeTaskStatus(
     .where(eq(schema.tasks.id, parsed.data.id))
     .returning();
   await logStatusTransition(db, updated!.id, task.status, parsed.data.toStatus, ctx.actor.userId, parsed.data.note);
+
+  try {
+    await notify(db, {
+      kind: "activity",
+      orgId: ctx.orgId,
+      taskId: parsed.data.id,
+      eventKind: "status_change",
+    });
+  } catch {
+    /* best effort */
+  }
 
   // Emit: assignees + (if customer-visible) customers in org. Exclude actor.
   const assignees = await db

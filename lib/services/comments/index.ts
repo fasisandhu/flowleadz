@@ -4,6 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireCommentWrite, requireCommentRead } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
+import { notify } from "@/lib/services/realtime/notify";
 import type { OrgContext } from "@/lib/services/_context";
 import {
   postCommentInputSchema,
@@ -103,6 +104,36 @@ export async function postComment(
       relatedType: "comment",
       relatedId: row!.id,
     });
+  }
+
+  if (parsed.data.parentType === "task") {
+    try {
+      await notify(db, {
+        kind: "activity",
+        orgId: ctx.orgId,
+        taskId: parsed.data.parentId,
+        eventKind: "comment",
+      });
+    } catch {
+      /* best effort */
+    }
+  } else if (parsed.data.parentType === "daily_update") {
+    const links = await db
+      .select({ taskId: schema.dailyUpdateTasks.taskId })
+      .from(schema.dailyUpdateTasks)
+      .where(eq(schema.dailyUpdateTasks.dailyUpdateId, parsed.data.parentId));
+    for (const link of links) {
+      try {
+        await notify(db, {
+          kind: "activity",
+          orgId: ctx.orgId,
+          taskId: link.taskId,
+          eventKind: "comment",
+        });
+      } catch {
+        /* best effort */
+      }
+    }
   }
 
   return ok(row!);

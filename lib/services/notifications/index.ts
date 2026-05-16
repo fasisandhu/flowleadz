@@ -6,6 +6,7 @@ import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
 import { sendNotificationEmail } from "@/lib/email/dispatch";
+import { notify } from "@/lib/services/realtime/notify";
 
 export type { ListForUserInput, MarkReadInput, UpsertPreferenceInput, EmitInput } from "./schemas";
 
@@ -57,6 +58,14 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
         sentAt: new Date(),
       })),
     );
+
+    for (const row of inAppNotifIds) {
+      try {
+        await notify(db, { kind: "notification", orgId: parsed.orgId, userId: row.userId });
+      } catch {
+        /* best effort */
+      }
+    }
   }
 
   // 2. Email
