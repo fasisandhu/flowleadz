@@ -134,7 +134,7 @@ describe("requireCommentWrite", () => {
       await createMembership(db, customer.id, org.id);
       const project = await createProject(db, org.id, admin.id);
       const update = await createUpdate(db, org.id, project.id, admin.id, "customer_visible");
-      const r = await requireCommentWrite(db, orgCtx(org.id, "customer", customer.id), update.id);
+      const r = await requireCommentWrite(db, orgCtx(org.id, "customer", customer.id), "daily_update", update.id);
       expect(r.ok).toBe(true);
     });
   });
@@ -147,7 +147,7 @@ describe("requireCommentWrite", () => {
       await createMembership(db, customer.id, org.id);
       const project = await createProject(db, org.id, admin.id);
       const update = await createUpdate(db, org.id, project.id, admin.id, "internal_only");
-      const r = await requireCommentWrite(db, orgCtx(org.id, "customer", customer.id), update.id);
+      const r = await requireCommentWrite(db, orgCtx(org.id, "customer", customer.id), "daily_update", update.id);
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.error.code).toBe("unauthorized");
     });

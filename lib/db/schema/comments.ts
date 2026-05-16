@@ -1,22 +1,21 @@
 import { pgTable, uuid, text, timestamp, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organizations, users } from "./better-auth";
-import { dailyUpdates } from "./daily-updates";
+import { users } from "./better-auth";
 
 export const comments = pgTable(
   "comments",
   {
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
-    orgId: text("org_id").notNull().references(() => organizations.id),
-    dailyUpdateId: uuid("daily_update_id").notNull().references(() => dailyUpdates.id, { onDelete: "cascade" }),
-    userId: text("user_id").notNull().references(() => users.id),
+    parentType: text("parent_type").notNull(), // 'daily_update' | 'task'
+    parentId: uuid("parent_id").notNull(),      // FK not declared because of polymorphism
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`now()`),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`now()`),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => ({
-    byUpdate: index("comments_update_idx").on(t.dailyUpdateId, t.createdAt),
+    byParent: index("comments_parent_idx").on(t.parentType, t.parentId, sql`${t.createdAt} desc`),
   }),
 );
 

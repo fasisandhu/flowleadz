@@ -43,7 +43,6 @@ export async function authorizeAttachmentParentWrite(
       const [row] = await db
         .select({
           id: schema.comments.id,
-          orgId: schema.comments.orgId,
           userId: schema.comments.userId,
           deletedAt: schema.comments.deletedAt,
         })
@@ -51,7 +50,6 @@ export async function authorizeAttachmentParentWrite(
         .where(eq(schema.comments.id, parentId))
         .limit(1);
       if (!row) return err("not_found", "Parent not found");
-      if (row.orgId !== ctx.orgId) return err("not_found", "Parent not found");
       if (row.deletedAt) return err("not_found", "Parent not found");
       if (ctx.actor.role !== "admin" && row.userId !== ctx.actor.userId) {
         return err("unauthorized", "Only the author or an admin can attach files to this comment");
@@ -104,15 +102,17 @@ export async function authorizeAttachmentParentRead(
       const [row] = await db
         .select({
           id: schema.comments.id,
-          orgId: schema.comments.orgId,
-          dailyUpdateId: schema.comments.dailyUpdateId,
+          parentType: schema.comments.parentType,
+          parentId: schema.comments.parentId,
         })
         .from(schema.comments)
         .where(eq(schema.comments.id, parentId))
         .limit(1);
       if (!row) return err("not_found", "Parent not found");
-      if (row.orgId !== ctx.orgId) return err("not_found", "Parent not found");
-      return requireDailyUpdateRead(db, ctx, row.dailyUpdateId);
+      if (row.parentType === "daily_update") {
+        return requireDailyUpdateRead(db, ctx, row.parentId);
+      }
+      return requireTaskRead(db, ctx, row.parentId);
     }
     case "work_request": {
       const [row] = await db

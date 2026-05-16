@@ -4,9 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { createCommentAction } from "@/lib/server-actions/comments";
+import { postCommentAction } from "@/lib/server-actions/comments";
 
-export function CommentReplyForm({ dailyUpdateId }: { dailyUpdateId: string }) {
+export function CommentReplyForm({
+  parentType,
+  parentId,
+}: {
+  parentType: "daily_update" | "task";
+  parentId: string;
+}) {
   const router = useRouter();
   const [body, setBody] = useState("");
   const [pending, setPending] = useState(false);
@@ -16,7 +22,7 @@ export function CommentReplyForm({ dailyUpdateId }: { dailyUpdateId: string }) {
     e.preventDefault();
     setError(null);
     setPending(true);
-    const r = await createCommentAction({ dailyUpdateId, body });
+    const r = await postCommentAction({ parentType, parentId, body });
     setPending(false);
     if (!r.ok) {
       setError(r.error.message);
@@ -35,7 +41,7 @@ export function CommentReplyForm({ dailyUpdateId }: { dailyUpdateId: string }) {
         rows={3}
         required
         minLength={1}
-        maxLength={10000}
+        maxLength={5000}
       />
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       <div className="flex justify-end">

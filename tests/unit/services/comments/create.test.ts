@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { closePool, withTransaction } from "@/tests/fixtures/db";
 import { createMembership, createOrg, createProject, createUser } from "@/tests/fixtures/factories";
 import * as schema from "@/lib/db/schema";
-import { createComment } from "@/lib/services/comments";
+import { postComment } from "@/lib/services/comments";
 import type { OrgContext } from "@/lib/services/_context";
 
 const ctxOf = (orgId: string, role: "customer" | "employee" | "admin", userId: string): OrgContext => ({
@@ -34,7 +34,7 @@ async function seedUpdate(
   return row!;
 }
 
-describe("comments.createComment", () => {
+describe("comments.postComment", () => {
   it("customer can comment on customer_visible update; notifies the author", async () => {
     await withTransaction(async (db) => {
       const org = await createOrg(db);
@@ -44,8 +44,9 @@ describe("comments.createComment", () => {
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
 
-      const r = await createComment(db, ctxOf(org.id, "customer", customer.id), {
-        dailyUpdateId: update.id,
+      const r = await postComment(db, ctxOf(org.id, "customer", customer.id), {
+        parentType: "daily_update",
+        parentId: update.id,
         body: "Looks great!",
       });
       expect(r.ok).toBe(true);
@@ -70,8 +71,9 @@ describe("comments.createComment", () => {
       await createMembership(db, customer.id, org.id);
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id, "internal_only");
-      const r = await createComment(db, ctxOf(org.id, "customer", customer.id), {
-        dailyUpdateId: update.id,
+      const r = await postComment(db, ctxOf(org.id, "customer", customer.id), {
+        parentType: "daily_update",
+        parentId: update.id,
         body: "x",
       });
       expect(r.ok).toBe(false);
@@ -90,12 +92,14 @@ describe("comments.createComment", () => {
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
 
-      await createComment(db, ctxOf(org.id, "customer", c1.id), {
-        dailyUpdateId: update.id,
+      await postComment(db, ctxOf(org.id, "customer", c1.id), {
+        parentType: "daily_update",
+        parentId: update.id,
         body: "first",
       });
-      const r = await createComment(db, ctxOf(org.id, "customer", c2.id), {
-        dailyUpdateId: update.id,
+      const r = await postComment(db, ctxOf(org.id, "customer", c2.id), {
+        parentType: "daily_update",
+        parentId: update.id,
         body: "second",
       });
       expect(r.ok).toBe(true);
@@ -127,8 +131,9 @@ describe("comments.createComment", () => {
       const admin = await createUser(db, { role: "admin" });
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
-      const r = await createComment(db, ctxOf(org.id, "admin", admin.id), {
-        dailyUpdateId: update.id,
+      const r = await postComment(db, ctxOf(org.id, "admin", admin.id), {
+        parentType: "daily_update",
+        parentId: update.id,
         body: "",
       });
       expect(r.ok).toBe(false);

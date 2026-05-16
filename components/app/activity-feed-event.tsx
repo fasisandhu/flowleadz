@@ -3,6 +3,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { CircleDot, Clock, MessageCircle, Paperclip, RefreshCw } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { TaskStatusPill } from "@/components/ui/status-pill";
+import { cn } from "@/lib/utils/cn";
 import type { ActivityEvent } from "@/lib/services/tasks";
 
 function relativeTime(d: Date | string) {
@@ -60,7 +61,7 @@ export function ActivityFeedEvent({
 
     case "comment":
       return (
-        <div className="flex items-start gap-2 pl-6 text-sm">
+        <div className={cn("flex items-start gap-2 text-sm", event.parentUpdateId && "pl-6")}>
           <MessageCircle className="mt-0.5 hidden h-4 w-4 text-slate-400 dark:text-slate-500 sm:inline-block" aria-hidden="true" />
           <Avatar
             userId={event.authorId}

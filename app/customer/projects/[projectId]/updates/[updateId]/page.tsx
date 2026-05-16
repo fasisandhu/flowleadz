@@ -46,7 +46,7 @@ export default async function CustomerDailyUpdatePage({
 
       <section>
         <h2 className="mb-3 text-lg font-medium">Comments</h2>
-        <CommentThread dailyUpdateId={updateId} />
+        <CommentThread parentType="daily_update" parentId={updateId} />
       </section>
 
       <Separator />

@@ -1,11 +1,21 @@
 import { z } from "zod";
 import { idSchema, nonEmptyStringSchema } from "@/lib/services/_schemas/common";
 
-export const createCommentInputSchema = z.object({
-  dailyUpdateId: idSchema,
-  body: nonEmptyStringSchema.max(10000),
+export const commentParentTypeEnum = z.enum(["daily_update", "task"]);
+export type CommentParentType = z.infer<typeof commentParentTypeEnum>;
+
+export const postCommentInputSchema = z.object({
+  parentType: commentParentTypeEnum,
+  parentId: idSchema,
+  body: nonEmptyStringSchema.max(5000),
 });
-export type CreateCommentInput = z.infer<typeof createCommentInputSchema>;
+export type PostCommentInput = z.infer<typeof postCommentInputSchema>;
+
+export const listCommentsInputSchema = z.object({
+  parentType: commentParentTypeEnum,
+  parentId: idSchema,
+});
+export type ListCommentsInput = z.infer<typeof listCommentsInputSchema>;
 
 export const updateCommentInputSchema = z
   .object({

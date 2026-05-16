@@ -2,8 +2,14 @@ import { format } from "date-fns";
 import { listCommentsAction } from "@/lib/server-actions/comments";
 import { CommentReplyForm } from "./comment-reply-form";
 
-export async function CommentThread({ dailyUpdateId }: { dailyUpdateId: string }) {
-  const r = await listCommentsAction(dailyUpdateId);
+export async function CommentThread({
+  parentType,
+  parentId,
+}: {
+  parentType: "daily_update" | "task";
+  parentId: string;
+}) {
+  const r = await listCommentsAction({ parentType, parentId });
   const comments = r.ok ? r.data : [];
 
   return (
@@ -27,7 +33,7 @@ export async function CommentThread({ dailyUpdateId }: { dailyUpdateId: string }
           ))
         )}
       </div>
-      <CommentReplyForm dailyUpdateId={dailyUpdateId} />
+      <CommentReplyForm parentType={parentType} parentId={parentId} />
     </div>
   );
 }

@@ -14,14 +14,13 @@ const ctxOf = (orgId: string, role: "customer" | "employee" | "admin", userId: s
 
 async function seedComment(
   db: Parameters<typeof createUser>[0],
-  orgId: string,
   dailyUpdateId: string,
   userId: string,
   body: string = "Original",
 ) {
   const [row] = await db
     .insert(schema.comments)
-    .values({ orgId, dailyUpdateId, userId, body })
+    .values({ parentType: "daily_update", parentId: dailyUpdateId, userId, body })
     .returning();
   return row!;
 }
@@ -51,7 +50,7 @@ describe("comments.updateComment", () => {
       const author = await createUser(db, { role: "employee" });
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
-      const comment = await seedComment(db, org.id, update.id, author.id, "Original");
+      const comment = await seedComment(db, update.id, author.id, "Original");
 
       const r = await updateComment(db, ctxOf(org.id, "employee", author.id), {
         id: comment.id,
@@ -78,7 +77,7 @@ describe("comments.updateComment", () => {
       const other = await createUser(db, { role: "employee" });
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
-      const comment = await seedComment(db, org.id, update.id, author.id);
+      const comment = await seedComment(db, update.id, author.id);
       const r = await updateComment(db, ctxOf(org.id, "employee", other.id), {
         id: comment.id,
         body: "Steal",
@@ -95,7 +94,7 @@ describe("comments.updateComment", () => {
       const author = await createUser(db, { role: "employee" });
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
-      const comment = await seedComment(db, org.id, update.id, author.id);
+      const comment = await seedComment(db, update.id, author.id);
       const r = await updateComment(db, ctxOf(org.id, "admin", admin.id), {
         id: comment.id,
         body: "Admin edit",
@@ -110,7 +109,7 @@ describe("comments.updateComment", () => {
       const admin = await createUser(db, { role: "admin" });
       const project = await createProject(db, org.id, admin.id);
       const update = await seedUpdate(db, org.id, project.id, admin.id);
-      const comment = await seedComment(db, org.id, update.id, admin.id, "Same");
+      const comment = await seedComment(db, update.id, admin.id, "Same");
       const r = await updateComment(db, ctxOf(org.id, "admin", admin.id), {
         id: comment.id,
         body: "Same",

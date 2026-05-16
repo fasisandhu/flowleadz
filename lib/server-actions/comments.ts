@@ -4,17 +4,23 @@ import { revalidatePath } from "next/cache";
 import { withSessionContext } from "./_action";
 import * as comments from "@/lib/services/comments";
 
-export async function createCommentAction(input: comments.CreateCommentInput) {
-  const result = await withSessionContext((db, ctx) => comments.createComment(db, ctx, input));
-  if (result.ok) {
-    // Refresh the daily-update detail page so the new comment shows immediately.
-    revalidatePath(`/customer/projects/.+/updates/${input.dailyUpdateId}`, "page");
+export async function postCommentAction(input: comments.PostCommentInput) {
+  const r = await withSessionContext((db, ctx) => comments.postComment(db, ctx, input));
+  if (r.ok) {
+    revalidatePath("/customer/projects", "layout");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/tasks", "layout");
+    revalidatePath("/employee/tasks", "layout");
+    revalidatePath("/admin/orgs", "layout");
   }
-  return result;
+  return r;
 }
 
-export async function listCommentsAction(dailyUpdateId: string) {
-  return withSessionContext((db, ctx) => comments.listComments(db, ctx, dailyUpdateId));
+// Keep old name for backward compatibility
+export const createCommentAction = postCommentAction;
+
+export async function listCommentsAction(input: comments.ListCommentsInput) {
+  return withSessionContext((db, ctx) => comments.listComments(db, ctx, input));
 }
 
 export async function softDeleteCommentAction(input: comments.SoftDeleteCommentInput) {

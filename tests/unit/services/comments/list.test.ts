@@ -29,16 +29,19 @@ describe("comments.listComments", () => {
       const t1 = new Date(Date.UTC(2026, 4, 8, 12, 0, 1));
       const t2 = new Date(Date.UTC(2026, 4, 8, 12, 0, 2));
       await db.insert(schema.comments).values({
-        orgId: org.id, dailyUpdateId: update!.id, userId: admin.id, body: "First", createdAt: t0,
+        parentType: "daily_update", parentId: update!.id, userId: admin.id, body: "First", createdAt: t0,
       });
       await db.insert(schema.comments).values({
-        orgId: org.id, dailyUpdateId: update!.id, userId: admin.id, body: "Second", deletedAt: new Date(), createdAt: t1,
+        parentType: "daily_update", parentId: update!.id, userId: admin.id, body: "Second", deletedAt: new Date(), createdAt: t1,
       });
       await db.insert(schema.comments).values({
-        orgId: org.id, dailyUpdateId: update!.id, userId: admin.id, body: "Third", createdAt: t2,
+        parentType: "daily_update", parentId: update!.id, userId: admin.id, body: "Third", createdAt: t2,
       });
 
-      const r = await listComments(db, ctxOf(org.id, "admin", admin.id), update!.id);
+      const r = await listComments(db, ctxOf(org.id, "admin", admin.id), {
+        parentType: "daily_update",
+        parentId: update!.id,
+      });
       expect(r.ok).toBe(true);
       if (!r.ok) return;
       expect(r.data.map((c) => c.body)).toEqual(["First", "Second", "Third"]);
@@ -60,7 +63,10 @@ describe("comments.listComments", () => {
           body: "u", activityType: "execution", visibility: "internal_only", logDate: "2026-05-08",
         })
         .returning();
-      const r = await listComments(db, ctxOf(org.id, "customer", customer.id), update!.id);
+      const r = await listComments(db, ctxOf(org.id, "customer", customer.id), {
+        parentType: "daily_update",
+        parentId: update!.id,
+      });
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.error.code).toBe("unauthorized");
     });
