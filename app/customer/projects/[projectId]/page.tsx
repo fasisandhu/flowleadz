@@ -60,7 +60,7 @@ export default async function CustomerProjectDetailPage({
       <Separator />
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">Updates</h2>
+        <h2 className="mb-3 text-lg font-medium">Daily updates</h2>
         {updates.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">No updates yet.</p>
         ) : (

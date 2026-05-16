@@ -171,7 +171,10 @@ export async function acceptWorkRequest(
       .from(schema.tasks)
       .where(eq(schema.tasks.id, request.resolvedTaskId))
       .limit(1);
-    if (task && !task.projectId) {
+    // Always sync the task's projectId to whatever the admin chose at accept.
+    // (Previously this only fired when the task had no project, leaving stale
+    // routing if the admin picked a different project than the customer.)
+    if (task && task.projectId !== finalProjectId) {
       await db
         .update(schema.tasks)
         .set({ projectId: finalProjectId, updatedAt: new Date() })

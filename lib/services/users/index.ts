@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
@@ -192,6 +192,38 @@ export async function listOrgMembers(
     .from(schema.users)
     .innerJoin(schema.members, eq(schema.members.userId, schema.users.id))
     .where(eq(schema.members.organizationId, parsed.data.orgId))
+    .orderBy(asc(schema.users.email));
+  return ok(rows);
+}
+
+/**
+ * Lists all staff users (employees + admins). Staff are agency-wide — they
+ * don't live in the `members` table the way customers do, so this query
+ * filters users by system_role directly.
+ */
+export async function listStaffUsers(
+  db: AnyDb,
+  ctx: OrgContext,
+): Promise<Result<User[]>> {
+  const role = requireRole(ctx, "admin");
+  if (!role.ok) return role;
+
+  const rows = await db
+    .select({
+      id: schema.users.id,
+      name: schema.users.name,
+      email: schema.users.email,
+      emailVerified: schema.users.emailVerified,
+      image: schema.users.image,
+      systemRole: schema.users.systemRole,
+      defaultHourlyRateCents: schema.users.defaultHourlyRateCents,
+      timezone: schema.users.timezone,
+      notificationPreferencesSet: schema.users.notificationPreferencesSet,
+      createdAt: schema.users.createdAt,
+      updatedAt: schema.users.updatedAt,
+    })
+    .from(schema.users)
+    .where(inArray(schema.users.systemRole, ["admin", "employee"]))
     .orderBy(asc(schema.users.email));
   return ok(rows);
 }

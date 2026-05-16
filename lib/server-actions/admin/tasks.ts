@@ -8,6 +8,21 @@ export async function adminListTasksAction(orgId: string, input: tasks.ListTasks
   return withSessionContext((db, ctx) => tasks.listTasks(db, ctx, input), { staffOrgId: orgId });
 }
 
+export async function adminCreateTaskAction(orgId: string, input: tasks.CreateTaskInput) {
+  const r = await withSessionContext(
+    (db, ctx) => tasks.createTask(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (r.ok) {
+    revalidatePath(`/admin/orgs/${orgId}/projects/${input.projectId}`, "page");
+    revalidatePath(`/admin/orgs/${orgId}/dashboard`, "page");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/employee/tasks", "page");
+    revalidatePath("/customer/projects", "layout");
+  }
+  return r;
+}
+
 export async function adminGetTaskAction(orgId: string, id: string) {
   return withSessionContext((db, ctx) => tasks.getTask(db, ctx, id), { staffOrgId: orgId });
 }

@@ -3,10 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { adminGetProjectAction } from "@/lib/server-actions/admin/projects";
 import { adminListProjectAssignmentsAction } from "@/lib/server-actions/admin/projects";
-import { adminListOrgMembersAction } from "@/lib/server-actions/admin/users";
+import { adminListStaffUsersAction } from "@/lib/server-actions/admin/users";
 import { adminListTasksWithCardDataAction } from "@/lib/server-actions/admin/tasks";
 import { ProjectTeamManager } from "@/components/app/project-team-manager";
 import { TaskCard } from "@/components/app/task-card";
+import { TaskCreateForm } from "@/components/app/task-create-form";
 
 export default async function AdminProjectDetailPage({
   params,
@@ -25,19 +26,18 @@ export default async function AdminProjectDetailPage({
   }
   const project = projectR.data;
 
-  const [tasksR, membersR, assignmentsR] = await Promise.all([
+  const [tasksR, staffR, assignmentsR] = await Promise.all([
     adminListTasksWithCardDataAction(orgId, { projectId }),
-    adminListOrgMembersAction(orgId),
+    adminListStaffUsersAction(orgId),
     adminListProjectAssignmentsAction(orgId, projectId),
   ]);
   const tasks = tasksR.ok ? tasksR.data : [];
   const assignments = assignmentsR.ok ? assignmentsR.data : [];
 
-  // Staff candidate list: org members with systemRole employee or admin.
-  const members = membersR.ok ? membersR.data : [];
-  const staffOptions = members
-    .filter((m) => m.systemRole === "employee" || m.systemRole === "admin")
-    .map((m) => ({ id: m.id, name: m.name ?? m.email }));
+  // Staff candidate list: all employees + admins (agency-wide, not org-scoped).
+  const staffOptions = staffR.ok
+    ? staffR.data.map((u) => ({ id: u.id, name: u.name ?? u.email }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -73,7 +73,10 @@ export default async function AdminProjectDetailPage({
       <Separator />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Tasks</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">Tasks</h2>
+        </div>
+        <TaskCreateForm orgId={orgId} projectId={projectId} />
         {tasks.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">No tasks yet.</p>
         ) : (
