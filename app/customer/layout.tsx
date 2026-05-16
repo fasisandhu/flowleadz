@@ -8,6 +8,8 @@ import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
 import { SearchInput } from "@/components/app/search-input";
+import { RealtimeProvider } from "@/components/app/realtime-provider";
+import { RealtimeRefresh } from "@/components/app/realtime-refresh";
 
 const CUSTOMER_NAV: MobileNavLink[] = [
   { href: "/customer/dashboard", label: "Dashboard", icon: "dashboard" },
@@ -73,7 +75,10 @@ export default async function CustomerLayout({ children }: { children: React.Rea
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl p-6">{children}</main>
+      <RealtimeProvider>
+        <RealtimeRefresh />
+        <main className="mx-auto max-w-6xl p-6">{children}</main>
+      </RealtimeProvider>
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
 import { SearchInput } from "@/components/app/search-input";
+import { RealtimeProvider } from "@/components/app/realtime-provider";
+import { RealtimeRefresh } from "@/components/app/realtime-refresh";
 
 const EMPLOYEE_NAV: MobileNavLink[] = [
   { href: "/employee/dashboard", label: "Dashboard", icon: "dashboard" },
@@ -78,7 +80,10 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl p-6">{children}</main>
+      <RealtimeProvider>
+        <RealtimeRefresh />
+        <main className="mx-auto max-w-6xl p-6">{children}</main>
+      </RealtimeProvider>
     </div>
   );
 }
