@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { Avatar } from "@/components/ui/avatar";
 import { CommentReplyForm } from "./comment-reply-form";
+import { ReactionBar, type ReactionAggregate } from "./reaction-bar";
 
 type Comment = {
   id: string;
@@ -19,11 +20,13 @@ export function CommentItem({
   parentType,
   parentId,
   hideReply,
+  initialReactions,
 }: {
   comment: Comment;
   parentType: "daily_update" | "task";
   parentId: string;
   hideReply?: boolean;
+  initialReactions: ReactionAggregate[];
 }) {
   const [replying, setReplying] = useState(false);
   const ts = format(new Date(comment.createdAt), "MMM d, yyyy h:mm a");
@@ -51,6 +54,7 @@ export function CommentItem({
           {comment.body}
         </p>
       )}
+      <ReactionBar commentId={comment.id} initial={initialReactions} />
       {replying && (
         <div className="mt-2">
           <CommentReplyForm

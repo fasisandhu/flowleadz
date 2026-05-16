@@ -9,3 +9,4 @@ export * from "./work-requests";
 export * from "./attachments";
 export * from "./notifications";
 export * from "./integrations";
+export * from "./comment-reactions";
