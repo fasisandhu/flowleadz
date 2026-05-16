@@ -1,6 +1,6 @@
-import { format } from "date-fns";
 import { listCommentsAction } from "@/lib/server-actions/comments";
 import { CommentReplyForm } from "./comment-reply-form";
+import { CommentItem } from "./comment-item";
 
 export async function CommentThread({
   parentType,
@@ -10,25 +10,39 @@ export async function CommentThread({
   parentId: string;
 }) {
   const r = await listCommentsAction({ parentType, parentId });
-  const comments = r.ok ? r.data : [];
+  if (!r.ok) {
+    return <p className="text-sm text-red-600 dark:text-red-400">Could not load comments.</p>;
+  }
+  const all = r.data;
+  const topLevel = all.filter((c) => c.parentCommentId === null);
+  const repliesByParent = new Map<string, typeof all>();
+  for (const c of all) {
+    if (c.parentCommentId) {
+      const arr = repliesByParent.get(c.parentCommentId) ?? [];
+      arr.push(c);
+      repliesByParent.set(c.parentCommentId, arr);
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        {comments.length === 0 ? (
+        {topLevel.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">No comments yet.</p>
         ) : (
-          comments.map((c) => (
-            <div key={c.id} className="rounded-md border bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-              <div className="mb-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                <span>{c.userId.slice(0, 8)}</span>
-                <span>{format(new Date(c.createdAt), "MMM d, yyyy h:mm a")}</span>
-              </div>
-              {c.deletedAt ? (
-                <p className="text-sm italic text-slate-400 dark:text-slate-500">[deleted]</p>
-              ) : (
-                <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{c.body}</p>
-              )}
+          topLevel.map((c) => (
+            <div key={c.id}>
+              <CommentItem comment={c} parentType={parentType} parentId={parentId} />
+              {repliesByParent.get(c.id)?.map((reply) => (
+                <div key={reply.id} className="ml-8 mt-2">
+                  <CommentItem
+                    comment={reply}
+                    parentType={parentType}
+                    parentId={parentId}
+                    hideReply
+                  />
+                </div>
+              ))}
             </div>
           ))
         )}

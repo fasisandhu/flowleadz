@@ -7,6 +7,7 @@ export type CommentParentType = z.infer<typeof commentParentTypeEnum>;
 export const postCommentInputSchema = z.object({
   parentType: commentParentTypeEnum,
   parentId: idSchema,
+  parentCommentId: idSchema.optional(),
   body: nonEmptyStringSchema.max(5000),
 });
 export type PostCommentInput = z.infer<typeof postCommentInputSchema>;

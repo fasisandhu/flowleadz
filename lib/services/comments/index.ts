@@ -51,11 +51,30 @@ export async function postComment(
   const access = await requireCommentWrite(db, ctx, parsed.data.parentType, parsed.data.parentId);
   if (!access.ok) return access;
 
+  if (parsed.data.parentCommentId) {
+    const [parent] = await db
+      .select({
+        parentType: schema.comments.parentType,
+        parentId: schema.comments.parentId,
+      })
+      .from(schema.comments)
+      .where(eq(schema.comments.id, parsed.data.parentCommentId))
+      .limit(1);
+    if (!parent) return err("not_found", "Parent comment not found");
+    if (
+      parent.parentType !== parsed.data.parentType ||
+      parent.parentId !== parsed.data.parentId
+    ) {
+      return err("validation", "Cannot reply across parents");
+    }
+  }
+
   const [row] = await db
     .insert(schema.comments)
     .values({
       parentType: parsed.data.parentType,
       parentId: parsed.data.parentId,
+      parentCommentId: parsed.data.parentCommentId ?? null,
       userId: ctx.actor.userId,
       body: parsed.data.body,
     })

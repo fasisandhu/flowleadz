@@ -9,9 +9,13 @@ import { postCommentAction } from "@/lib/server-actions/comments";
 export function CommentReplyForm({
   parentType,
   parentId,
+  parentCommentId,
+  onPosted,
 }: {
   parentType: "daily_update" | "task";
   parentId: string;
+  parentCommentId?: string;
+  onPosted?: () => void;
 }) {
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -22,13 +26,14 @@ export function CommentReplyForm({
     e.preventDefault();
     setError(null);
     setPending(true);
-    const r = await postCommentAction({ parentType, parentId, body });
+    const r = await postCommentAction({ parentType, parentId, parentCommentId, body });
     setPending(false);
     if (!r.ok) {
       setError(r.error.message);
       return;
     }
     setBody("");
+    onPosted?.();
     router.refresh();
   }
 
