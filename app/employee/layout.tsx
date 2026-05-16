@@ -9,10 +9,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
 
 const EMPLOYEE_NAV: MobileNavLink[] = [
-  { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/employee/projects", label: "Projects", icon: FolderKanban },
-  { href: "/employee/tasks", label: "My tasks", icon: CheckSquare },
-  { href: "/employee/time", label: "Time", icon: Clock },
+  { href: "/employee/dashboard", label: "Dashboard", icon: "dashboard" },
+  { href: "/employee/projects", label: "Projects", icon: "projects" },
+  { href: "/employee/tasks", label: "My tasks", icon: "tasks" },
+  { href: "/employee/time", label: "Time", icon: "time" },
 ];
 
 async function signOutAction() {

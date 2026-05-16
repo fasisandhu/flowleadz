@@ -2,13 +2,43 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import {
+  CheckSquare,
+  Clock,
+  FilePlus2,
+  FolderKanban,
+  Inbox,
+  LayoutDashboard,
+  Menu,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+
+// Icon registry — keyed by string name. The server layout cannot pass icon
+// components across the RSC boundary (lucide-react icons are forwardRef
+// exotic components and trip "Functions cannot be passed directly to Client
+// Components"). Pass the icon NAME instead and resolve here.
+export type NavIcon =
+  | "dashboard"
+  | "projects"
+  | "tasks"
+  | "time"
+  | "requests"
+  | "work-requests";
+
+const ICON_MAP: Record<NavIcon, React.ComponentType<{ className?: string }>> = {
+  dashboard: LayoutDashboard,
+  projects: FolderKanban,
+  tasks: CheckSquare,
+  time: Clock,
+  requests: FilePlus2,
+  "work-requests": Inbox,
+};
 
 export type MobileNavLink = {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: NavIcon;
 };
 
 export function MobileNavSheet({ links }: { links: MobileNavLink[] }) {
@@ -63,7 +93,7 @@ export function MobileNavSheet({ links }: { links: MobileNavLink[] }) {
             </div>
             <nav className="flex flex-col gap-1">
               {links.map((link) => {
-                const Icon = link.icon;
+                const Icon = ICON_MAP[link.icon];
                 return (
                   <Link
                     key={link.href}

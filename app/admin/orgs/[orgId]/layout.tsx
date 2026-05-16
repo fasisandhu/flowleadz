@@ -28,9 +28,9 @@ export default async function AdminOrgLayout({
   const { orgId } = await params;
 
   const ADMIN_NAV: MobileNavLink[] = [
-    { href: `/admin/orgs/${orgId}/dashboard`, label: "Dashboard", icon: LayoutDashboard },
-    { href: `/admin/orgs/${orgId}/projects`, label: "Projects", icon: FolderKanban },
-    { href: `/admin/orgs/${orgId}/work-requests`, label: "Work requests", icon: Inbox },
+    { href: `/admin/orgs/${orgId}/dashboard`, label: "Dashboard", icon: "dashboard" },
+    { href: `/admin/orgs/${orgId}/projects`, label: "Projects", icon: "projects" },
+    { href: `/admin/orgs/${orgId}/work-requests`, label: "Work requests", icon: "work-requests" },
   ];
 
   const orgsR = await adminListOrgsAction();
