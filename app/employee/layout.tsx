@@ -7,6 +7,7 @@ import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
+import { SearchInput } from "@/components/app/search-input";
 
 const EMPLOYEE_NAV: MobileNavLink[] = [
   { href: "/employee/dashboard", label: "Dashboard", icon: "dashboard" },
@@ -60,6 +61,7 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <SearchInput searchHref="/employee/search" />
             <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} href="/employee/notifications" />
             <Link

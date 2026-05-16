@@ -7,6 +7,7 @@ import { listNotificationsAction } from "@/lib/server-actions/notifications";
 import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
+import { SearchInput } from "@/components/app/search-input";
 
 const CUSTOMER_NAV: MobileNavLink[] = [
   { href: "/customer/dashboard", label: "Dashboard", icon: "dashboard" },
@@ -55,6 +56,7 @@ export default async function CustomerLayout({ children }: { children: React.Rea
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <SearchInput searchHref="/customer/search" />
             <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} />
             <Link

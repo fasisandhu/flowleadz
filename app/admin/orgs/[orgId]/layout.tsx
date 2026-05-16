@@ -8,6 +8,7 @@ import { adminListNotificationsAction } from "@/lib/server-actions/admin/notific
 import { NotificationsBell } from "@/components/app/notifications-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { MobileNavSheet, type MobileNavLink } from "@/components/app/mobile-nav-sheet";
+import { SearchInput } from "@/components/app/search-input";
 
 async function signOutAction() {
   "use server";
@@ -68,6 +69,7 @@ export default async function AdminOrgLayout({
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <SearchInput searchHref={`/admin/orgs/${orgId}/search`} />
             <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} href={`/admin/orgs/${orgId}/notifications`} />
             <span className="text-sm text-slate-600 dark:text-slate-300">{org.name}</span>
