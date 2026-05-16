@@ -15,6 +15,12 @@ export async function authorizeAttachmentParentWrite(
   parentType: AttachmentParentType,
   parentId: string,
 ): Promise<Result<true>> {
+  if (parentType === "user_avatar") {
+    if (parentId !== ctx.actor.userId) {
+      return err("unauthorized", "Cannot manage another user's avatar");
+    }
+    return ok(true);
+  }
   switch (parentType) {
     case "daily_update": {
       const [row] = await db
@@ -80,6 +86,12 @@ export async function authorizeAttachmentParentRead(
   parentType: AttachmentParentType,
   parentId: string,
 ): Promise<Result<true>> {
+  if (parentType === "user_avatar") {
+    if (parentId !== ctx.actor.userId) {
+      return err("unauthorized", "Cannot manage another user's avatar");
+    }
+    return ok(true);
+  }
   const { requireDailyUpdateRead, requireTaskRead, requireOrgAccess } = await import(
     "@/lib/services/_auth/predicates"
   );

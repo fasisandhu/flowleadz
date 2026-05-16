@@ -45,18 +45,37 @@ export function Avatar({
   userId,
   name,
   email,
+  image,
   size = "sm",
   className,
 }: {
   userId: string;
   name?: string | null;
   email?: string | null;
+  image?: string | null;
   size?: AvatarSize;
   className?: string;
 }) {
   const initials = initialsFrom(name, email);
   const palette = PALETTE[hash(userId) % PALETTE.length]!;
   const label = name ?? email ?? initials;
+
+  if (image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={image}
+        alt={label}
+        title={label}
+        className={cn(
+          "inline-block select-none rounded-full object-cover",
+          SIZE_CLASSES[size],
+          className,
+        )}
+      />
+    );
+  }
+
   return (
     <span
       className={cn(
@@ -78,7 +97,7 @@ export function AvatarStack({
   max = 3,
   size = "sm",
 }: {
-  users: { id: string; name?: string | null; email?: string | null }[];
+  users: { id: string; name?: string | null; email?: string | null; image?: string | null }[];
   max?: number;
   size?: AvatarSize;
 }) {
@@ -92,6 +111,7 @@ export function AvatarStack({
           userId={u.id}
           name={u.name}
           email={u.email}
+          image={u.image}
           size={size}
           className="ring-2 ring-white dark:ring-slate-900"
         />
