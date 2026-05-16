@@ -15,6 +15,9 @@ export type { SubmitWorkRequestInput, AcceptWorkRequestInput, RejectWorkRequestI
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;
 type WorkRequest = typeof schema.workRequests.$inferSelect;
+export type WorkRequestWithSubmitter = WorkRequest & {
+  submitter: { id: string; name: string | null; email: string };
+};
 
 function zodIssuesToFields(issues: { path: PropertyKey[]; message: string }[]) {
   const fields: Record<string, string> = {};
@@ -366,7 +369,7 @@ export async function listWorkRequests(
   db: AnyDb,
   ctx: OrgContext,
   input: ListWorkRequestsInput,
-): Promise<Result<WorkRequest[]>> {
+): Promise<Result<WorkRequestWithSubmitter[]>> {
   const parsed = listWorkRequestsInputSchema.safeParse(input);
   if (!parsed.success) {
     return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
@@ -393,26 +396,42 @@ export async function listWorkRequests(
   }
 
   const rows = await db
-    .select()
+    .select({
+      workRequest: schema.workRequests,
+      submitter: { id: schema.users.id, name: schema.users.name, email: schema.users.email },
+    })
     .from(schema.workRequests)
+    .leftJoin(schema.users, eq(schema.workRequests.submittedBy, schema.users.id))
     .where(and(...conditions))
     .orderBy(desc(schema.workRequests.createdAt));
-  return ok(rows);
+  return ok(
+    rows.map((r) => ({
+      ...r.workRequest,
+      submitter: r.submitter ?? { id: r.workRequest.submittedBy, name: null, email: "" },
+    })),
+  );
 }
 
 export async function getWorkRequest(
   db: AnyDb,
   ctx: OrgContext,
   id: string,
-): Promise<Result<WorkRequest>> {
+): Promise<Result<WorkRequestWithSubmitter>> {
   const access = await requireOrgAccess(db, ctx);
   if (!access.ok) return access;
   const [row] = await db
-    .select()
+    .select({
+      workRequest: schema.workRequests,
+      submitter: { id: schema.users.id, name: schema.users.name, email: schema.users.email },
+    })
     .from(schema.workRequests)
+    .leftJoin(schema.users, eq(schema.workRequests.submittedBy, schema.users.id))
     .where(eq(schema.workRequests.id, id))
     .limit(1);
   if (!row) return err("not_found", "Work request not found");
-  if (row.orgId !== ctx.orgId) return err("not_found", "Work request not found");
-  return ok(row);
+  if (row.workRequest.orgId !== ctx.orgId) return err("not_found", "Work request not found");
+  return ok({
+    ...row.workRequest,
+    submitter: row.submitter ?? { id: row.workRequest.submittedBy, name: null, email: "" },
+  });
 }

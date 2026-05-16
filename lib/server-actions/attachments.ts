@@ -15,6 +15,23 @@ export async function listAttachmentsForParentAction(input: attachments.ListForP
   return withSessionContext((db, ctx) => attachments.listForParent(db, ctx, input));
 }
 
+export async function adminListAttachmentsForParentAction(
+  orgId: string,
+  input: attachments.ListForParentInput,
+) {
+  return withSessionContext(
+    (db, ctx) => attachments.listForParent(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+}
+
 export async function getAttachmentDownloadUrlAction(input: { id: string }) {
   return withSessionContext((db, ctx) => attachments.getDownloadUrl(db, ctx, input));
+}
+
+export async function adminGetAttachmentDownloadUrlAction(orgId: string, input: { id: string }) {
+  return withSessionContext(
+    (db, ctx) => attachments.getDownloadUrl(db, ctx, input),
+    { staffOrgId: orgId },
+  );
 }

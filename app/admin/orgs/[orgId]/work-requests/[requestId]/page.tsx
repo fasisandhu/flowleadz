@@ -57,7 +57,9 @@ export default async function AdminWorkRequestDetailPage({
             </Badge>
           )}
           <span className="text-slate-500 dark:text-slate-400">
-            Submitted {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
+            Submitted by {req.submitter.name ?? req.submitter.email}
+            {" · "}
+            {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
           </span>
         </div>
         <h1 className="text-xl font-semibold">{req.title}</h1>
@@ -85,7 +87,7 @@ export default async function AdminWorkRequestDetailPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Attachments</h2>
-        <AttachmentList parentType="work_request" parentId={requestId} />
+        <AttachmentList parentType="work_request" parentId={requestId} orgId={orgId} />
       </section>
     </article>
   );

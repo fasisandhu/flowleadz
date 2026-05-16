@@ -85,7 +85,7 @@ export default async function AdminTaskDetailPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Attachments</h2>
-        <AttachmentList parentType="task" parentId={taskId} />
+        <AttachmentList parentType="task" parentId={taskId} orgId={orgId} />
       </section>
 
       {task.projectId && (

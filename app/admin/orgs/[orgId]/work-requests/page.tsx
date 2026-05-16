@@ -72,6 +72,8 @@ export default async function AdminWorkRequestsPage({
                     {req.title}
                   </Link>
                   <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    by {req.submitter.name ?? req.submitter.email}
+                    {" · "}
                     {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
                   </div>
                 </div>
