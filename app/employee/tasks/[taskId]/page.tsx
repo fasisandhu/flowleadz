@@ -60,6 +60,14 @@ export default async function EmployeeTaskDetailPage({
       />
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+        {task.sourceRequester && (
+          <span>
+            Requested by{" "}
+            <span className="text-slate-700 dark:text-slate-200">
+              {task.sourceRequester.name ?? task.sourceRequester.email}
+            </span>
+          </span>
+        )}
         {task.dueDate && (
           <span>Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
         )}

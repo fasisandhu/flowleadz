@@ -113,8 +113,12 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
 
 type Notification = typeof schema.notifications.$inferSelect;
 
+export type NotificationWithActor = Notification & {
+  actor: { id: string; name: string | null; email: string } | null;
+};
+
 export type ListForUserResult = {
-  notifications: Notification[];
+  notifications: NotificationWithActor[];
   unreadCount: number;
 };
 
@@ -163,7 +167,28 @@ export async function listForUser(
   const [notifications, unreadCountRows] = await Promise.all([rowsQuery, unreadQuery]);
   const unreadCount = Number(unreadCountRows[0]?.value ?? 0);
 
-  return ok({ notifications, unreadCount });
+  // Resolve actor names from each notification's payload.actorId in one query.
+  const actorIds = Array.from(
+    new Set(
+      notifications
+        .map((n) => (n.payload as { actorId?: unknown }).actorId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+  const actors = actorIds.length
+    ? await db
+        .select({ id: schema.users.id, name: schema.users.name, email: schema.users.email })
+        .from(schema.users)
+        .where(inArray(schema.users.id, actorIds))
+    : [];
+  const actorById = new Map(actors.map((a) => [a.id, a]));
+
+  const enriched: NotificationWithActor[] = notifications.map((n) => {
+    const id = (n.payload as { actorId?: unknown }).actorId;
+    return { ...n, actor: typeof id === "string" ? (actorById.get(id) ?? null) : null };
+  });
+
+  return ok({ notifications: enriched, unreadCount });
 }
 
 export async function markRead(

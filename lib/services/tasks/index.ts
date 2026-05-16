@@ -342,16 +342,29 @@ export async function listTasks(
   return ok(rows);
 }
 
+export type TaskWithSourceRequester = Task & {
+  sourceRequester: { id: string; name: string | null; email: string } | null;
+};
+
 export async function getTask(
   db: AnyDb,
   ctx: OrgContext,
   taskId: string,
-): Promise<Result<Task>> {
+): Promise<Result<TaskWithSourceRequester>> {
   const access = await requireTaskRead(db, ctx, taskId);
   if (!access.ok) return access;
-  const [row] = await db.select().from(schema.tasks).where(eq(schema.tasks.id, taskId)).limit(1);
+  const [row] = await db
+    .select({
+      task: schema.tasks,
+      requester: { id: schema.users.id, name: schema.users.name, email: schema.users.email },
+    })
+    .from(schema.tasks)
+    .leftJoin(schema.workRequests, eq(schema.tasks.sourceRequestId, schema.workRequests.id))
+    .leftJoin(schema.users, eq(schema.workRequests.submittedBy, schema.users.id))
+    .where(eq(schema.tasks.id, taskId))
+    .limit(1);
   if (!row) return err("not_found", "Task not found");
-  return ok(row);
+  return ok({ ...row.task, sourceRequester: row.requester });
 }
 
 export {
