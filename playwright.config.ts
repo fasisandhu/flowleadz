@@ -21,10 +21,14 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "pnpm dev",
-    env: { NEXT_PRIVATE_NO_TURBOPACK: "1" },
+    // Use production build for E2E — dev mode's HMR pipeline crashes on Node 24
+    // ("Jest worker encountered N child process exceptions"). Production mode
+    // is also faster per-request and exercises the same code path that ships.
+    // DISABLE_RATE_LIMIT must be 1 in .env to suppress Better Auth's prod
+    // rate limiter (Plan 3c Task 10).
+    command: "pnpm build && pnpm start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 });
