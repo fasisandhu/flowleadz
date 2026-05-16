@@ -17,6 +17,7 @@ export function TaskActionBar({
   taskId,
   projectId,
   currentStatus,
+  orgId,
   canPostUpdate,
   canLogTime,
   canChangeStatus,
@@ -26,6 +27,8 @@ export function TaskActionBar({
   taskId: string;
   projectId: string;
   currentStatus: TaskStatus;
+  /** Pass on admin routes so action calls get the right org context. */
+  orgId?: string;
   canPostUpdate: boolean;
   canLogTime: boolean;
   canChangeStatus: boolean;
@@ -100,17 +103,17 @@ export function TaskActionBar({
 
       <div className={cn("mt-4", mode === "none" && "hidden")}>
         {mode === "post" && (
-          <PostUpdateForm projectId={projectId} taskId={taskId} onPosted={close} />
+          <PostUpdateForm projectId={projectId} taskId={taskId} orgId={orgId} onPosted={close} />
         )}
-        {mode === "log" && <LogTimeInlineForm taskId={taskId} onLogged={close} />}
+        {mode === "log" && <LogTimeInlineForm taskId={taskId} orgId={orgId} onLogged={close} />}
         {mode === "status" && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-600 dark:text-slate-300">Current status:</span>
-            <TaskStatusChanger taskId={taskId} currentStatus={currentStatus} />
+            <TaskStatusChanger taskId={taskId} currentStatus={currentStatus} orgId={orgId} />
           </div>
         )}
-        {mode === "attach" && <AttachmentUpload parentType="task" parentId={taskId} />}
-        {mode === "comment" && <CommentReplyForm parentType="task" parentId={taskId} />}
+        {mode === "attach" && <AttachmentUpload parentType="task" parentId={taskId} orgId={orgId} />}
+        {mode === "comment" && <CommentReplyForm parentType="task" parentId={taskId} orgId={orgId} />}
       </div>
     </div>
   );

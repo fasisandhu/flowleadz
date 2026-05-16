@@ -13,6 +13,17 @@ export async function logTimeAction(input: timeEntries.LogTimeInput) {
   return result;
 }
 
+export async function adminLogTimeAction(orgId: string, input: timeEntries.LogTimeInput) {
+  const result = await withSessionContext(
+    (db, ctx) => timeEntries.logTime(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (result.ok) {
+    revalidatePath(`/admin/orgs/${orgId}/dashboard`, "page");
+  }
+  return result;
+}
+
 export async function listTimeEntriesAction(input: timeEntries.ListTimeEntriesInput = {}) {
   return withSessionContext((db, ctx) =>
     timeEntries.listTimeEntries(db, ctx, { userId: ctx.actor.userId, ...input }),

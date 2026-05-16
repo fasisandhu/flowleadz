@@ -4,17 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { postCommentAction } from "@/lib/server-actions/comments";
+import { postCommentAction, adminPostCommentAction } from "@/lib/server-actions/comments";
 
 export function CommentReplyForm({
   parentType,
   parentId,
   parentCommentId,
+  orgId,
   onPosted,
 }: {
   parentType: "daily_update" | "task";
   parentId: string;
   parentCommentId?: string;
+  /** Pass on admin routes so the action gets the right org context. */
+  orgId?: string;
   onPosted?: () => void;
 }) {
   const router = useRouter();
@@ -26,7 +29,10 @@ export function CommentReplyForm({
     e.preventDefault();
     setError(null);
     setPending(true);
-    const r = await postCommentAction({ parentType, parentId, parentCommentId, body });
+    const input = { parentType, parentId, parentCommentId, body };
+    const r = orgId
+      ? await adminPostCommentAction(orgId, input)
+      : await postCommentAction(input);
     setPending(false);
     if (!r.ok) {
       setError(r.error.message);

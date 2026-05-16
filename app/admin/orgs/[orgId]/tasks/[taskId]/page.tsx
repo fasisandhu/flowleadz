@@ -101,6 +101,7 @@ export default async function AdminTaskDetailPage({
           taskId={taskId}
           projectId={task.projectId}
           currentStatus={task.status as TaskStatus}
+          orgId={orgId}
           canPostUpdate={true}
           canLogTime={true}
           canChangeStatus={true}

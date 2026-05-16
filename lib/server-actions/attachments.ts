@@ -7,8 +7,28 @@ export async function getUploadUrlAction(input: attachments.GetUploadUrlInput) {
   return withSessionContext((db, ctx) => attachments.getUploadUrl(db, ctx, input));
 }
 
+export async function adminGetUploadUrlAction(
+  orgId: string,
+  input: attachments.GetUploadUrlInput,
+) {
+  return withSessionContext(
+    (db, ctx) => attachments.getUploadUrl(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+}
+
 export async function confirmAttachmentAction(input: attachments.ConfirmAttachmentInput) {
   return withSessionContext((db, ctx) => attachments.confirm(db, ctx, input));
+}
+
+export async function adminConfirmAttachmentAction(
+  orgId: string,
+  input: attachments.ConfirmAttachmentInput,
+) {
+  return withSessionContext(
+    (db, ctx) => attachments.confirm(db, ctx, input),
+    { staffOrgId: orgId },
+  );
 }
 
 export async function listAttachmentsForParentAction(input: attachments.ListForParentInput) {

@@ -16,6 +16,17 @@ export async function postCommentAction(input: comments.PostCommentInput) {
   return r;
 }
 
+export async function adminPostCommentAction(orgId: string, input: comments.PostCommentInput) {
+  const r = await withSessionContext(
+    (db, ctx) => comments.postComment(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (r.ok) {
+    revalidatePath(`/admin/orgs/${orgId}`, "layout");
+  }
+  return r;
+}
+
 // Keep old name for backward compatibility
 export const createCommentAction = postCommentAction;
 
