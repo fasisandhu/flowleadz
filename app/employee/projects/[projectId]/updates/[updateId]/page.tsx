@@ -6,6 +6,7 @@ import { getDailyUpdateAction } from "@/lib/server-actions/daily-updates";
 import { CommentThread } from "@/components/app/comment-thread";
 import { AttachmentList } from "@/components/app/attachment-list";
 import { AttachmentUpload } from "@/components/app/attachment-upload";
+import { UpdateHistory } from "@/components/app/update-history";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   planning: "Planning",
@@ -50,6 +51,8 @@ export default async function EmployeeDailyUpdatePage({
       <div className="rounded-md border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
         <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{u.body}</p>
       </div>
+
+      <UpdateHistory updateId={updateId} />
 
       <Separator />
 

@@ -216,6 +216,32 @@ export async function markRead(
   return ok({ markedCount: result.length });
 }
 
+export type NotificationPreferenceRow = {
+  eventType: string;
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+};
+
+export async function listMyPreferences(
+  db: AnyDb,
+  ctx: OrgContext,
+): Promise<Result<NotificationPreferenceRow[]>> {
+  const rows = await db
+    .select({
+      eventType: schema.notificationPreferences.eventType,
+      inAppEnabled: schema.notificationPreferences.inAppEnabled,
+      emailEnabled: schema.notificationPreferences.emailEnabled,
+    })
+    .from(schema.notificationPreferences)
+    .where(
+      and(
+        eq(schema.notificationPreferences.orgId, ctx.orgId),
+        eq(schema.notificationPreferences.userId, ctx.actor.userId),
+      ),
+    );
+  return ok(rows);
+}
+
 export async function upsertPreference(
   db: AnyDb,
   ctx: OrgContext,
