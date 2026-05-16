@@ -97,6 +97,7 @@ export default async function EmployeeTaskDetailPage({
           canLogTime={true}
           canChangeStatus={true}
           canAttach={true}
+          canComment={true}
         />
       )}
     </div>

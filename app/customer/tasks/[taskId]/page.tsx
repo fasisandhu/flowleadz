@@ -7,6 +7,7 @@ import { TaskStatusPill } from "@/components/ui/status-pill";
 import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
+import { TaskActionBar } from "@/components/app/task-action-bar";
 import {
   getTaskAction,
   getTaskActivityAction,
@@ -80,6 +81,19 @@ export default async function CustomerTaskDetailPage({
         <h2 className="text-lg font-medium">Activity</h2>
         <ActivityFeed events={activity} />
       </section>
+
+      {task.projectId && (
+        <TaskActionBar
+          taskId={taskId}
+          projectId={task.projectId}
+          currentStatus={task.status as TaskStatus}
+          canPostUpdate={false}
+          canLogTime={false}
+          canChangeStatus={false}
+          canAttach={false}
+          canComment={true}
+        />
+      )}
     </div>
   );
 }

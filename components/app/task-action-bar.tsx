@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "@/components/ui/button";
-import { Clock, MessageSquarePlus, Paperclip, RefreshCw } from "lucide-react";
+import { Clock, MessageCircle, MessageSquarePlus, Paperclip, RefreshCw } from "lucide-react";
 import { PostUpdateForm } from "./post-update-form";
 import { LogTimeInlineForm } from "./log-time-inline-form";
 import { TaskStatusChanger } from "./task-status-changer";
 import { AttachmentUpload } from "./attachment-upload";
+import { CommentReplyForm } from "./comment-reply-form";
 import type { TaskStatus } from "@/lib/constants/status";
 
-type Mode = "none" | "post" | "log" | "status" | "attach";
+type Mode = "none" | "post" | "log" | "status" | "attach" | "comment";
 
 export function TaskActionBar({
   taskId,
@@ -20,6 +21,7 @@ export function TaskActionBar({
   canLogTime,
   canChangeStatus,
   canAttach,
+  canComment,
 }: {
   taskId: string;
   projectId: string;
@@ -28,11 +30,12 @@ export function TaskActionBar({
   canLogTime: boolean;
   canChangeStatus: boolean;
   canAttach: boolean;
+  canComment: boolean;
 }) {
   const [mode, setMode] = useState<Mode>("none");
   const close = () => setMode("none");
 
-  const showAny = canPostUpdate || canLogTime || canChangeStatus || canAttach;
+  const showAny = canPostUpdate || canLogTime || canChangeStatus || canAttach || canComment;
   if (!showAny) return null;
 
   return (
@@ -47,6 +50,17 @@ export function TaskActionBar({
           >
             <MessageSquarePlus className="mr-1 h-4 w-4" />
             Post update
+          </Button>
+        )}
+        {canComment && (
+          <Button
+            type="button"
+            variant={mode === "comment" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setMode(mode === "comment" ? "none" : "comment")}
+          >
+            <MessageCircle className="mr-1 h-4 w-4" />
+            Comment
           </Button>
         )}
         {canLogTime && (
@@ -96,6 +110,7 @@ export function TaskActionBar({
           </div>
         )}
         {mode === "attach" && <AttachmentUpload parentType="task" parentId={taskId} />}
+        {mode === "comment" && <CommentReplyForm parentType="task" parentId={taskId} />}
       </div>
     </div>
   );
