@@ -4,17 +4,18 @@ import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { TaskStatusPill } from "@/components/ui/status-pill";
-import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
 import { AttachmentList } from "@/components/app/attachment-list";
 import { TaskActionBar } from "@/components/app/task-action-bar";
+import { TaskAssigneeManager } from "@/components/app/task-assignee-manager";
 import {
   adminGetTaskAction,
   adminGetTaskActivityAction,
   adminGetTaskAssigneesAction,
 } from "@/lib/server-actions/admin/tasks";
 import { adminGetProjectAction } from "@/lib/server-actions/admin/projects";
+import { adminListStaffUsersAction } from "@/lib/server-actions/admin/users";
 import type { TaskStatus } from "@/lib/constants/status";
 
 export default async function AdminTaskDetailPage({
@@ -24,10 +25,11 @@ export default async function AdminTaskDetailPage({
 }) {
   const { orgId, taskId } = await params;
 
-  const [taskR, activityR, assigneesR] = await Promise.all([
+  const [taskR, activityR, assigneesR, staffR] = await Promise.all([
     adminGetTaskAction(orgId, taskId),
     adminGetTaskActivityAction(orgId, taskId),
     adminGetTaskAssigneesAction(orgId, taskId),
+    adminListStaffUsersAction(orgId),
   ]);
 
   if (!taskR.ok) {
@@ -41,6 +43,9 @@ export default async function AdminTaskDetailPage({
 
   const assignees = assigneesR.ok ? assigneesR.data : [];
   const activity = activityR.ok ? activityR.data : [];
+  const staffOptions = staffR.ok
+    ? staffR.data.map((u) => ({ id: u.id, name: u.name ?? u.email }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -71,17 +76,18 @@ export default async function AdminTaskDetailPage({
         {task.dueDate && (
           <span>Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
         )}
-        {assignees.length > 0 && (
-          <div className="flex items-center gap-1">
-            <span>Assigned:</span>
-            {assignees.map((a) => (
-              <span key={a.id} className="inline-flex items-center gap-1">
-                <Avatar userId={a.id} name={a.name} email={a.email} size="xs" />
-                <span>{a.name || a.email}</span>
-              </span>
-            ))}
-          </div>
-        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Assignees
+        </h2>
+        <TaskAssigneeManager
+          orgId={orgId}
+          taskId={taskId}
+          initialAssignees={assignees}
+          staffOptions={staffOptions}
+        />
       </div>
 
       <Separator />
