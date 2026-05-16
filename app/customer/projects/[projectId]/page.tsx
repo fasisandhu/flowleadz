@@ -79,7 +79,7 @@ export default async function CustomerProjectDetailPage({
         ) : (
           <div className="space-y-2">
             {upcomingTasks.map((t) => (
-              <TaskCard key={t.id} task={t} href={`/customer/tasks/${t.id}`} />
+              <TaskCard key={t.id} task={t} href={`/customer/tasks/${t.id}`} enableQuickReply />
             ))}
           </div>
         )}

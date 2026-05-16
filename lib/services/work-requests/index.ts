@@ -4,7 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireOrgAccess } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
-import { createFromRequest } from "@/lib/services/tasks";
+import { createFromRequest, assignTask } from "@/lib/services/tasks";
 import type { OrgContext } from "@/lib/services/_context";
 import { submitWorkRequestInputSchema, type SubmitWorkRequestInput, acceptWorkRequestInputSchema, type AcceptWorkRequestInput, rejectWorkRequestInputSchema, type RejectWorkRequestInput, markDuplicateWorkRequestInputSchema, type MarkDuplicateWorkRequestInput, listWorkRequestsInputSchema, type ListWorkRequestsInput } from "./schemas";
 import { requireRole } from "@/lib/services/_auth/predicates";
@@ -179,6 +179,15 @@ export async function acceptWorkRequest(
         .update(schema.tasks)
         .set({ projectId: finalProjectId, updatedAt: new Date() })
         .where(eq(schema.tasks.id, task.id));
+    }
+    if (task && parsed.data.assigneeUserId) {
+      const assignR = await assignTask(db, ctx, {
+        taskId: task.id,
+        userId: parsed.data.assigneeUserId,
+      });
+      if (!assignR.ok) {
+        // Don't roll back the accept — assignment is best-effort.
+      }
     }
   }
 

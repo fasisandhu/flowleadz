@@ -22,6 +22,7 @@ import {
 
 type ProjectOption = { id: string; name: string };
 type TaskOption = { id: string; title: string };
+type StaffOption = { id: string; name: string };
 
 export function WorkRequestReviewBar({
   orgId,
@@ -29,17 +30,20 @@ export function WorkRequestReviewBar({
   initialStatus,
   projects,
   tasks,
+  staff,
 }: {
   orgId: string;
   requestId: string;
   initialStatus: string;
   projects: ProjectOption[];
   tasks: TaskOption[];
+  staff: StaffOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [acceptProjectId, setAcceptProjectId] = useState<string>("");
+  const [acceptAssigneeId, setAcceptAssigneeId] = useState<string>("");
   const [rejectReason, setRejectReason] = useState<string>("");
   const [duplicateTaskId, setDuplicateTaskId] = useState<string>("");
 
@@ -51,6 +55,7 @@ export function WorkRequestReviewBar({
       const r = await adminAcceptWorkRequestAction(orgId, {
         id: requestId,
         projectId: acceptProjectId || undefined,
+        assigneeUserId: acceptAssigneeId || undefined,
       });
       if (!r.ok) setError(r.error.message);
       router.refresh();
@@ -128,6 +133,28 @@ export function WorkRequestReviewBar({
               </SelectContent>
             </Select>
           </div>
+          {staff.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="acceptAssignee">Assign to teammate (optional)</Label>
+              <Select
+                value={acceptAssigneeId}
+                onValueChange={(v) => v && setAcceptAssigneeId(v)}
+              >
+                <SelectTrigger id="acceptAssignee">
+                  <SelectValue placeholder="(no assignee)">
+                    {(v) => staff.find((s) => s.id === v)?.name ?? null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {staff.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Button type="button" onClick={onAccept} disabled={disabled}>
             {pending ? "Accepting…" : "Accept request"}
           </Button>

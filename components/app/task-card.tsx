@@ -1,8 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ArrowRight, MessageCircle, Clock, Paperclip } from "lucide-react";
 import { AvatarStack } from "@/components/ui/avatar";
 import { TaskStatusPill } from "@/components/ui/status-pill";
+import { Button } from "@/components/ui/button";
+import { CommentReplyForm } from "./comment-reply-form";
 import type { TaskStatus } from "@/lib/constants/status";
 
 export type TaskCardData = {
@@ -27,18 +32,32 @@ function formatMinutes(m: number): string {
   return `${h}h ${r}m`;
 }
 
-export function TaskCard({ task, href }: { task: TaskCardData; href: string }) {
+export function TaskCard({
+  task,
+  href,
+  orgId,
+  enableQuickReply = false,
+}: {
+  task: TaskCardData;
+  href: string;
+  /** Pass on admin routes so the inline reply uses the right context. */
+  orgId?: string;
+  /** Render an inline "Comment" affordance that opens a composer per card. */
+  enableQuickReply?: boolean;
+}) {
+  const [replyOpen, setReplyOpen] = useState(false);
+
   return (
-    <Link
-      href={href}
-      className="group block rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:shadow-none dark:hover:border-slate-600"
-    >
+    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:shadow-none dark:hover:border-slate-600">
       <div className="flex items-start gap-3">
         <TaskStatusPill status={task.status} />
-        <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900 dark:text-slate-50">
-          {task.title}
-        </h3>
-        <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+        <Link
+          href={href}
+          className="group flex min-w-0 flex-1 items-start gap-2 text-sm font-medium text-slate-900 hover:underline dark:text-slate-50"
+        >
+          <span className="min-w-0 flex-1 truncate">{task.title}</span>
+          <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300" />
+        </Link>
       </div>
 
       {task.lastActivitySnippet && (
@@ -78,7 +97,30 @@ export function TaskCard({ task, href }: { task: TaskCardData; href: string }) {
             Due {format(new Date(task.dueDate), "MMM d")}
           </span>
         )}
+        {enableQuickReply && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => setReplyOpen((v) => !v)}
+          >
+            <MessageCircle className="mr-1 h-3 w-3" />
+            {replyOpen ? "Cancel" : "Comment"}
+          </Button>
+        )}
       </div>
-    </Link>
+
+      {enableQuickReply && replyOpen && (
+        <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+          <CommentReplyForm
+            parentType="task"
+            parentId={task.id}
+            orgId={orgId}
+            onPosted={() => setReplyOpen(false)}
+          />
+        </div>
+      )}
+    </article>
   );
 }

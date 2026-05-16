@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { adminGetWorkRequestAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
 import { adminListTasksAction } from "@/lib/server-actions/admin/tasks";
+import { adminListStaffUsersAction } from "@/lib/server-actions/admin/users";
 import { WorkRequestReviewBar } from "@/components/app/work-request-review-bar";
 import { AttachmentList } from "@/components/app/attachment-list";
 
@@ -42,15 +43,19 @@ export default async function AdminWorkRequestDetailPage({
   }
   const req = r.data;
 
-  const [projectsR, tasksR] = await Promise.all([
+  const [projectsR, tasksR, staffR] = await Promise.all([
     adminListProjectsAction(orgId, { status: "active" }),
     adminListTasksAction(orgId, {}),
+    adminListStaffUsersAction(orgId),
   ]);
   const projects = projectsR.ok ? projectsR.data.map((p) => ({ id: p.id, name: p.name })) : [];
   const tasks = tasksR.ok
     ? tasksR.data
         .filter((t) => t.id !== req.resolvedTaskId)
         .map((t) => ({ id: t.id, title: t.title }))
+    : [];
+  const staff = staffR.ok
+    ? staffR.data.map((u) => ({ id: u.id, name: u.name ?? u.email }))
     : [];
 
   return (
@@ -90,6 +95,7 @@ export default async function AdminWorkRequestDetailPage({
           initialStatus={req.status}
           projects={projects}
           tasks={tasks}
+          staff={staff}
         />
       </section>
 

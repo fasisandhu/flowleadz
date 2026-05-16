@@ -77,7 +77,7 @@ export default async function EmployeeProjectDetailPage({
         ) : (
           <div className="space-y-2">
             {tasks.map((t) => (
-              <TaskCard key={t.id} task={t} href={`/employee/tasks/${t.id}`} />
+              <TaskCard key={t.id} task={t} href={`/employee/tasks/${t.id}`} enableQuickReply />
             ))}
           </div>
         )}
