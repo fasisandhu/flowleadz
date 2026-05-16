@@ -9,6 +9,7 @@ import { ActivityFeed } from "@/components/app/activity-feed";
 import { AttachmentList } from "@/components/app/attachment-list";
 import { TaskActionBar } from "@/components/app/task-action-bar";
 import { TaskAssigneeManager } from "@/components/app/task-assignee-manager";
+import { TaskEditForm } from "@/components/app/task-edit-form";
 import {
   adminGetTaskAction,
   adminGetTaskActivityAction,
@@ -61,7 +62,22 @@ export default async function AdminTaskDetailPage({
       <PageHeader
         title={task.title}
         subtitle={task.description ?? undefined}
-        action={<TaskStatusPill status={task.status as TaskStatus} />}
+        action={
+          <div className="flex items-center gap-2">
+            <TaskStatusPill status={task.status as TaskStatus} />
+            <TaskEditForm
+              orgId={orgId}
+              task={{
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                dueDate: task.dueDate,
+                customerVisible: task.customerVisible,
+              }}
+            />
+          </div>
+        }
       />
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
+import { InviteUserForm } from "@/components/app/invite-user-form";
 import { adminListWorkRequestsAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
 import { adminListRecentActivityAction } from "@/lib/server-actions/admin/tasks";
@@ -25,7 +26,10 @@ export default async function AdminDashboardPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        action={<InviteUserForm orgId={orgId} />}
+      />
 
       <div className="grid gap-3 md:grid-cols-3">
         <Card>

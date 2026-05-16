@@ -23,6 +23,22 @@ export async function adminCreateTaskAction(orgId: string, input: tasks.CreateTa
   return r;
 }
 
+export async function adminUpdateTaskAction(orgId: string, input: tasks.UpdateTaskInput) {
+  const r = await withSessionContext(
+    (db, ctx) => tasks.updateTask(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (r.ok) {
+    revalidatePath(`/admin/orgs/${orgId}/tasks/${input.id}`, "page");
+    revalidatePath(`/admin/orgs/${orgId}/projects`, "layout");
+    revalidatePath("/employee/tasks", "page");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/projects", "layout");
+    revalidatePath("/customer/tasks", "layout");
+  }
+  return r;
+}
+
 export async function adminGetTaskAction(orgId: string, id: string) {
   return withSessionContext((db, ctx) => tasks.getTask(db, ctx, id), { staffOrgId: orgId });
 }

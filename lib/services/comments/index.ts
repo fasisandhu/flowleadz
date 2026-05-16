@@ -208,11 +208,15 @@ export async function softDeleteComment(
   return ok(true);
 }
 
+export type CommentWithAuthor = Comment & {
+  author: { id: string; name: string | null; email: string } | null;
+};
+
 export async function listComments(
   db: AnyDb,
   ctx: OrgContext,
   input: ListCommentsInput,
-): Promise<Result<Comment[]>> {
+): Promise<Result<CommentWithAuthor[]>> {
   const parsed = listCommentsInputSchema.safeParse(input);
   if (!parsed.success) {
     return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
@@ -220,8 +224,16 @@ export async function listComments(
   const access = await requireCommentRead(db, ctx, parsed.data.parentType, parsed.data.parentId);
   if (!access.ok) return access;
   const rows = await db
-    .select()
+    .select({
+      comment: schema.comments,
+      author: {
+        id: schema.users.id,
+        name: schema.users.name,
+        email: schema.users.email,
+      },
+    })
     .from(schema.comments)
+    .leftJoin(schema.users, eq(schema.comments.userId, schema.users.id))
     .where(
       and(
         eq(schema.comments.parentType, parsed.data.parentType),
@@ -229,7 +241,7 @@ export async function listComments(
       ),
     )
     .orderBy(asc(schema.comments.createdAt), asc(schema.comments.id));
-  return ok(rows);
+  return ok(rows.map((r) => ({ ...r.comment, author: r.author })));
 }
 
 async function collectParticipants(

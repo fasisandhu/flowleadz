@@ -35,5 +35,53 @@ export async function listCommentsAction(input: comments.ListCommentsInput) {
 }
 
 export async function softDeleteCommentAction(input: comments.SoftDeleteCommentInput) {
-  return withSessionContext((db, ctx) => comments.softDeleteComment(db, ctx, input));
+  const r = await withSessionContext((db, ctx) => comments.softDeleteComment(db, ctx, input));
+  if (r.ok) {
+    revalidatePath("/customer/projects", "layout");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/tasks", "layout");
+    revalidatePath("/employee/tasks", "layout");
+    revalidatePath("/admin/orgs", "layout");
+  }
+  return r;
+}
+
+export async function adminSoftDeleteCommentAction(
+  orgId: string,
+  input: comments.SoftDeleteCommentInput,
+) {
+  const r = await withSessionContext(
+    (db, ctx) => comments.softDeleteComment(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (r.ok) {
+    revalidatePath(`/admin/orgs/${orgId}`, "layout");
+  }
+  return r;
+}
+
+export async function updateCommentAction(input: comments.UpdateCommentInput) {
+  const r = await withSessionContext((db, ctx) => comments.updateComment(db, ctx, input));
+  if (r.ok) {
+    revalidatePath("/customer/projects", "layout");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/customer/tasks", "layout");
+    revalidatePath("/employee/tasks", "layout");
+    revalidatePath("/admin/orgs", "layout");
+  }
+  return r;
+}
+
+export async function adminUpdateCommentAction(
+  orgId: string,
+  input: comments.UpdateCommentInput,
+) {
+  const r = await withSessionContext(
+    (db, ctx) => comments.updateComment(db, ctx, input),
+    { staffOrgId: orgId },
+  );
+  if (r.ok) {
+    revalidatePath(`/admin/orgs/${orgId}`, "layout");
+  }
+  return r;
 }

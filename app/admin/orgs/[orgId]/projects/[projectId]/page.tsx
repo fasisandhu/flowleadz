@@ -8,6 +8,7 @@ import { adminListTasksWithCardDataAction } from "@/lib/server-actions/admin/tas
 import { ProjectTeamManager } from "@/components/app/project-team-manager";
 import { TaskCard } from "@/components/app/task-card";
 import { TaskCreateForm } from "@/components/app/task-create-form";
+import { ProjectEditForm } from "@/components/app/project-edit-form";
 
 export default async function AdminProjectDetailPage({
   params,
@@ -53,9 +54,24 @@ export default async function AdminProjectDetailPage({
             </p>
           )}
         </div>
-        <Badge variant="secondary" className="capitalize">
-          {project.status}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+          <Badge variant="secondary" className="capitalize">
+            {project.status}
+          </Badge>
+          <ProjectEditForm
+            orgId={orgId}
+            project={{
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              serviceType: project.serviceType,
+              status: project.status,
+              startDate: project.startDate,
+              endDate: project.endDate,
+              hourlyRateCents: project.hourlyRateCents,
+            }}
+          />
+        </div>
       </header>
 
       <Separator />

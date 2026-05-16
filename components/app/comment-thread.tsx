@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { auth } from "@/lib/better-auth/config";
 import { listCommentsAction } from "@/lib/server-actions/comments";
 import { listReactionsForCommentAction } from "@/lib/server-actions/reactions";
 import type { ReactionAggregate } from "@/lib/services/reactions";
@@ -7,10 +9,16 @@ import { CommentItem } from "./comment-item";
 export async function CommentThread({
   parentType,
   parentId,
+  orgId,
 }: {
   parentType: "daily_update" | "task";
   parentId: string;
+  /** Pass on admin routes so mutation actions use the right org context. */
+  orgId?: string;
 }) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const currentUserId = session?.user?.id ?? null;
+  const currentRole = (session?.user as { systemRole?: string } | undefined)?.systemRole ?? null;
   const r = await listCommentsAction({ parentType, parentId });
   if (!r.ok) {
     return <p className="text-sm text-red-600 dark:text-red-400">Could not load comments.</p>;
@@ -48,6 +56,10 @@ export async function CommentThread({
                 comment={c}
                 parentType={parentType}
                 parentId={parentId}
+                orgId={orgId}
+                canMutate={
+                  currentUserId === c.userId || currentRole === "admin"
+                }
                 initialReactions={reactionMap.get(c.id) ?? []}
               />
               {repliesByParent.get(c.id)?.map((reply) => (
@@ -56,6 +68,10 @@ export async function CommentThread({
                     comment={reply}
                     parentType={parentType}
                     parentId={parentId}
+                    orgId={orgId}
+                    canMutate={
+                      currentUserId === reply.userId || currentRole === "admin"
+                    }
                     hideReply
                     initialReactions={reactionMap.get(reply.id) ?? []}
                   />
@@ -65,7 +81,7 @@ export async function CommentThread({
           ))
         )}
       </div>
-      <CommentReplyForm parentType={parentType} parentId={parentId} />
+      <CommentReplyForm parentType={parentType} parentId={parentId} orgId={orgId} />
     </div>
   );
 }
