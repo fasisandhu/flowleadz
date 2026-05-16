@@ -23,9 +23,44 @@ export async function GET() {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      controller.enqueue(encoder.encode("retry: 1000\n\n"));
+      // Timer handles live on an object so cleanup() can read them before they
+      // are assigned (and clearInterval/clearTimeout are no-ops on undefined).
+      const timers: {
+        keepalive?: ReturnType<typeof setInterval>;
+        hardTimeout?: ReturnType<typeof setTimeout>;
+      } = {};
 
-      const onNotification = (msg: { channel: string; payload?: string }) => {
+      // Single source of truth for "tear everything down". Idempotent.
+      const cleanup = () => {
+        if (closed) return;
+        closed = true;
+        if (timers.keepalive) clearInterval(timers.keepalive);
+        if (timers.hardTimeout) clearTimeout(timers.hardTimeout);
+        listenClient.removeAllListeners();
+        listenClient.end().catch(() => {
+          /* best effort */
+        });
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      };
+
+      // Enqueue if open, tear down on any error (closed controller, etc.).
+      // Prevents uncaughtException loops when the pipe is already dead.
+      const safeEnqueue = (chunk: Uint8Array) => {
+        if (closed) return;
+        try {
+          controller.enqueue(chunk);
+        } catch {
+          cleanup();
+        }
+      };
+
+      safeEnqueue(encoder.encode("retry: 1000\n\n"));
+
+      listenClient.on("notification", (msg: { channel: string; payload?: string }) => {
         if (closed || msg.channel !== "crm_events" || !msg.payload) return;
         let parsed: unknown;
         try {
@@ -38,49 +73,17 @@ export async function GET() {
         if (typeof p?.orgId !== "string") return;
         if (p.orgId !== orgId) return;
         if (p.kind === "notification" && p.userId !== userId) return;
-        controller.enqueue(encoder.encode(`data: ${msg.payload}\n\n`));
-      };
-
-      listenClient.on("notification", onNotification);
-      listenClient.on("error", () => {
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
+        safeEnqueue(encoder.encode(`data: ${msg.payload}\n\n`));
       });
+      listenClient.on("error", cleanup);
 
-      const keepalive = setInterval(() => {
-        if (closed) return;
-        try {
-          controller.enqueue(encoder.encode(": keepalive\n\n"));
-        } catch {
-          /* already closed */
-        }
+      timers.keepalive = setInterval(() => {
+        safeEnqueue(encoder.encode(": keepalive\n\n"));
       }, 25_000);
 
-      const cleanup = () => {
-        closed = true;
-        clearInterval(keepalive);
-        listenClient.removeAllListeners();
-        listenClient.end().catch(() => {
-          /* best effort */
-        });
-      };
+      timers.hardTimeout = setTimeout(cleanup, (maxDuration - 5) * 1000);
 
-      const hardTimeout = setTimeout(() => {
-        cleanup();
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
-      }, (maxDuration - 5) * 1000);
-
-      (controller as unknown as { __cleanup: () => void }).__cleanup = () => {
-        clearTimeout(hardTimeout);
-        cleanup();
-      };
+      (controller as unknown as { __cleanup: () => void }).__cleanup = cleanup;
     },
     cancel() {
       const c = this as unknown as { __cleanup?: () => void };
