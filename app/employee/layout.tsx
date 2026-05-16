@@ -62,7 +62,12 @@ export default async function EmployeeLayout({ children }: { children: React.Rea
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <NotificationsBell initialUnreadCount={initialUnread} href="/employee/notifications" />
-            <span className="text-sm text-slate-600 dark:text-slate-300">{session.user.name ?? session.user.email}</span>
+            <Link
+              href="/employee/settings/profile"
+              className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
+            >
+              {session.user.name ?? session.user.email}
+            </Link>
             <form action={signOutAction}>
               <button type="submit" className="text-sm text-slate-600 hover:underline dark:text-slate-300">
                 Sign out

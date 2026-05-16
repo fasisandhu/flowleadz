@@ -72,7 +72,12 @@ export default async function AdminOrgLayout({
             <NotificationsBell initialUnreadCount={initialUnread} href={`/admin/orgs/${orgId}/notifications`} />
             <span className="text-sm text-slate-600 dark:text-slate-300">{org.name}</span>
             <span className="text-xs text-slate-400 dark:text-slate-500">·</span>
-            <span className="text-sm text-slate-600 dark:text-slate-300">{session?.user.name ?? session?.user.email}</span>
+            <Link
+              href="/admin/settings/profile"
+              className="text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
+            >
+              {session?.user.name ?? session?.user.email}
+            </Link>
             <form action={signOutAction}>
               <button type="submit" className="text-sm text-slate-600 hover:underline dark:text-slate-300">Sign out</button>
             </form>
