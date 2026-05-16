@@ -51,7 +51,7 @@ export function TaskStatusChanger({
     <div className="flex flex-col items-end gap-1">
       <Select value={currentStatus} onValueChange={onChange} disabled={pending}>
         <SelectTrigger className="h-8 w-[140px] text-xs">
-          <SelectValue />
+          <SelectValue>{(v) => (typeof v === "string" ? (STATUS_LABELS[v] ?? v) : null)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {STATUSES.map((s) => (

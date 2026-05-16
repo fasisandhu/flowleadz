@@ -113,7 +113,9 @@ export function WorkRequestReviewBar({
               onValueChange={(v) => v && setAcceptProjectId(v)}
             >
               <SelectTrigger id="acceptProject">
-                <SelectValue placeholder="(leave unassigned)" />
+                <SelectValue placeholder="(leave unassigned)">
+                  {(v) => projects.find((p) => p.id === v)?.name ?? null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {projects.map((p) => (

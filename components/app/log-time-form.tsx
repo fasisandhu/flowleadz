@@ -85,7 +85,9 @@ export function LogTimeForm({
         <Label>Task</Label>
         <Select value={taskId} onValueChange={(v) => v && setTaskId(v)}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v) => tasks.find((t) => t.id === v)?.title ?? null}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {tasks.map((t) => (
