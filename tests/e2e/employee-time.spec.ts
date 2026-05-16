@@ -34,6 +34,11 @@ test("employee logs time on a task and sees it in My time", async ({ page }) => 
   // Submit. Differentiate the submit button from the action-bar toggle.
   await page.click('button[type="submit"]:has-text("Log time")');
 
+  // Wait for the form to close (TaskActionBar resets mode to "none" on success,
+  // which unmounts the inline log-time form). Without this we race the
+  // navigation against the in-flight server action and miss the new row.
+  await expect(page.locator("input#log-minutes")).toHaveCount(0);
+
   // Navigate to My time. Hard navigation to ensure a fresh server render.
   await page.goto("/employee/time");
   await expect(page).toHaveURL(/\/employee\/time$/);
