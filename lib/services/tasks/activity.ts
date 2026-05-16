@@ -21,6 +21,7 @@ export type ActivityEvent =
       body: string;
       activityType: string;
       visibility: "customer_visible" | "internal_only";
+      canEdit: boolean;
     }
   | {
       kind: "status_change";
@@ -215,6 +216,7 @@ export async function listActivityForTask(
       body: u.body,
       activityType: u.activityType,
       visibility: u.visibility as "customer_visible" | "internal_only",
+      canEdit: ctx.actor.role === "admin" || u.authorId === ctx.actor.userId,
     })),
     ...filteredComments.map((c) => ({
       kind: "comment" as const,
@@ -473,6 +475,7 @@ export async function listRecentActivity(
       body: u.body,
       activityType: u.activityType,
       visibility: u.visibility as "customer_visible" | "internal_only",
+      canEdit: ctx.actor.role === "admin" || u.authorId === ctx.actor.userId,
     })),
     ...filteredComments.map((c) => ({
       kind: "comment" as const,

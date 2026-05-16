@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { format, formatDistanceToNow } from "date-fns";
 import { CircleDot, Clock, MessageCircle, Paperclip, RefreshCw } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { TaskStatusPill } from "@/components/ui/status-pill";
 import { cn } from "@/lib/utils/cn";
 import type { ActivityEvent } from "@/lib/services/tasks";
+import { UpdateFeedCard } from "./update-feed-card";
 
 function relativeTime(d: Date | string) {
   return formatDistanceToNow(new Date(d), { addSuffix: true });
@@ -29,35 +29,7 @@ export function ActivityFeedEvent({
 
   switch (event.kind) {
     case "update":
-      return (
-        <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
-          <header className="mb-2 flex items-center gap-2">
-            <Avatar
-              userId={event.authorId}
-              name={event.authorName}
-              email={event.authorEmail}
-              size="sm"
-            />
-            <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
-              {event.authorName || event.authorEmail}
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">posted an update · {ts}</span>
-            {event.visibility === "internal_only" && (
-              <span className="ml-auto rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                Internal
-              </span>
-            )}
-          </header>
-          <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{event.body}</p>
-          {taskHref && (
-            <footer className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              <Link href={taskHref} className="hover:underline">
-                View task →
-              </Link>
-            </footer>
-          )}
-        </article>
-      );
+      return <UpdateFeedCard event={event} ts={ts} taskHref={taskHref} />;
 
     case "comment":
       return (
