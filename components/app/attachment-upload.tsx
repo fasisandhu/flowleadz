@@ -117,7 +117,7 @@ export function AttachmentUpload({
         disabled={pending}
         onChange={onChange}
       />
-      {progress && <p className="text-xs text-slate-500">{progress}</p>}
+      {progress && <p className="text-xs text-slate-500 dark:text-slate-400">{progress}</p>}
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>

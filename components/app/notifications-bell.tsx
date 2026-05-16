@@ -34,7 +34,7 @@ export function NotificationsBell({
     <Link
       href={href}
       aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
-      className="relative inline-flex items-center justify-center rounded-md p-2 hover:bg-slate-100"
+      className="relative inline-flex items-center justify-center rounded-md p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
     >
       <Bell className="h-5 w-5" aria-hidden="true" />
       {unread > 0 && (

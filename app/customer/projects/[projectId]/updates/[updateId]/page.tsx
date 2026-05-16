@@ -24,29 +24,29 @@ export default async function CustomerDailyUpdatePage({
   const r = await getDailyUpdateAction(updateId);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{r.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{r.error.message}</p>;
   }
   const u = r.data;
 
   return (
     <article className="space-y-6">
       <header>
-        <div className="mb-2 flex items-center gap-2 text-xs text-slate-500">
+        <div className="mb-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <Badge variant="secondary">{ACTIVITY_LABELS[u.activityType] ?? u.activityType}</Badge>
           <span>{format(new Date(u.logDate), "MMM d, yyyy")}</span>
         </div>
         <h1 className="text-xl font-semibold">Daily update</h1>
       </header>
 
-      <div className="rounded-md border bg-white p-4">
-        <p className="whitespace-pre-wrap text-sm text-slate-800">{u.body}</p>
+      <div className="rounded-md border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{u.body}</p>
       </div>
 
       <Separator />
 
       <section>
         <h2 className="mb-3 text-lg font-medium">Comments</h2>
-        <CommentThread dailyUpdateId={updateId} />
+        <CommentThread parentType="daily_update" parentId={updateId} />
       </section>
 
       <Separator />

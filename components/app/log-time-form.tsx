@@ -95,7 +95,7 @@ export function LogTimeForm({
             ))}
           </SelectContent>
         </Select>
-        {fieldErrors.taskId && <p className="text-sm text-red-600">{fieldErrors.taskId}</p>}
+        {fieldErrors.taskId && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.taskId}</p>}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -110,7 +110,7 @@ export function LogTimeForm({
             value={minutes}
             onChange={(e) => setMinutes(e.target.value)}
           />
-          {fieldErrors.minutes && <p className="text-sm text-red-600">{fieldErrors.minutes}</p>}
+          {fieldErrors.minutes && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.minutes}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="loggedForDate">Date</Label>

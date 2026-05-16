@@ -20,12 +20,12 @@ export async function AttachmentList({
 }) {
   const r = await listAttachmentsForParentAction({ parentType, parentId });
   if (!r.ok) {
-    return <p className="text-sm text-red-600">Could not load attachments.</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">Could not load attachments.</p>;
   }
   const attachments = r.data;
 
   if (attachments.length === 0) {
-    return <p className="text-sm text-slate-500">No attachments.</p>;
+    return <p className="text-sm text-slate-500 dark:text-slate-400">No attachments.</p>;
   }
 
   // Resolve presigned URLs in parallel.
@@ -41,24 +41,24 @@ export async function AttachmentList({
         return (
           <li
             key={a.id}
-            className="flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm"
+            className="flex items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
           >
-            <FileText className="h-4 w-4 text-slate-500" aria-hidden="true" />
+            <FileText className="h-4 w-4 text-slate-500 dark:text-slate-400" aria-hidden="true" />
             {href ? (
               <Link
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="text-blue-600 hover:underline"
+                className="text-blue-600 hover:underline dark:text-indigo-400"
               >
                 {a.filename}
               </Link>
             ) : (
-              <span className="text-slate-500">
+              <span className="text-slate-500 dark:text-slate-400">
                 {a.filename} (download unavailable)
               </span>
             )}
-            <span className="ml-auto text-xs text-slate-400">
+            <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">
               {formatBytes(Number(a.sizeBytes))}
             </span>
           </li>

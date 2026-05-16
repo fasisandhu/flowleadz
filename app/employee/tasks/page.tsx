@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listTasksWithCardDataAction } from "@/lib/server-actions/tasks";
 import { TaskCard } from "@/components/app/task-card";
+import { EmptyState } from "@/components/app/empty-state";
+import { EmptyTasksIllustration } from "@/components/app/illustrations/empty-tasks";
 
 const STATUS_LABELS: Record<string, string> = {
   todo: "To do",
@@ -42,7 +44,7 @@ export default async function EmployeeTasksPage({
             key={f}
             href={`/employee/tasks?status=${f}`}
             className={`rounded-full border px-3 py-1 ${
-              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "hover:bg-slate-50"
+              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300" : "hover:bg-slate-50 dark:hover:bg-slate-800"
             }`}
           >
             {f === "all" ? "All" : f === "open" ? "Open" : STATUS_LABELS[f]}
@@ -51,7 +53,11 @@ export default async function EmployeeTasksPage({
       </div>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-slate-500">No tasks match.</p>
+        <EmptyState
+          illustration={EmptyTasksIllustration}
+          title="No tasks match"
+          description="Try a different filter or wait until you're assigned to something."
+        />
       ) : (
         <div className="space-y-2">
           {tasks.map((t) => (

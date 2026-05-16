@@ -37,7 +37,7 @@ export default async function AdminWorkRequestDetailPage({
   const r = await adminGetWorkRequestAction(orgId, requestId);
   if (!r.ok) {
     if (r.error.code === "not_found" || r.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{r.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{r.error.message}</p>;
   }
   const req = r.data;
 
@@ -56,7 +56,7 @@ export default async function AdminWorkRequestDetailPage({
               Priority: {PRIORITY_LABELS[req.priorityHint] ?? req.priorityHint}
             </Badge>
           )}
-          <span className="text-slate-500">
+          <span className="text-slate-500 dark:text-slate-400">
             Submitted {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
           </span>
         </div>
@@ -64,8 +64,8 @@ export default async function AdminWorkRequestDetailPage({
       </header>
 
       {req.description && (
-        <div className="rounded-md border bg-white p-4">
-          <p className="whitespace-pre-wrap text-sm text-slate-800">{req.description}</p>
+        <div className="rounded-md border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{req.description}</p>
         </div>
       )}
 

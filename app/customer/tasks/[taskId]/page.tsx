@@ -7,6 +7,7 @@ import { TaskStatusPill } from "@/components/ui/status-pill";
 import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
+import { TaskActionBar } from "@/components/app/task-action-bar";
 import {
   getTaskAction,
   getTaskActivityAction,
@@ -30,7 +31,7 @@ export default async function CustomerTaskDetailPage({
 
   if (!taskR.ok) {
     if (taskR.error.code === "not_found" || taskR.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{taskR.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{taskR.error.message}</p>;
   }
   const task = taskR.data;
 
@@ -45,7 +46,7 @@ export default async function CustomerTaskDetailPage({
       {project && (
         <Link
           href={`/customer/projects/${project.id}`}
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
         >
           <ArrowLeft className="h-3 w-3" /> Back to {project.name}
         </Link>
@@ -57,7 +58,7 @@ export default async function CustomerTaskDetailPage({
         action={<TaskStatusPill status={task.status as TaskStatus} />}
       />
 
-      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
         {task.dueDate && (
           <span>Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
         )}
@@ -80,6 +81,19 @@ export default async function CustomerTaskDetailPage({
         <h2 className="text-lg font-medium">Activity</h2>
         <ActivityFeed events={activity} />
       </section>
+
+      {task.projectId && (
+        <TaskActionBar
+          taskId={taskId}
+          projectId={task.projectId}
+          currentStatus={task.status as TaskStatus}
+          canPostUpdate={false}
+          canLogTime={false}
+          canChangeStatus={false}
+          canAttach={false}
+          canComment={true}
+        />
+      )}
     </div>
   );
 }

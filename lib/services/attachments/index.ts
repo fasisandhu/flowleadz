@@ -47,6 +47,21 @@ export async function getUploadUrl(
     return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
   }
 
+  if (parsed.data.parentType === "user_avatar") {
+    const imageTypes = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+    if (!imageTypes.has(parsed.data.contentType)) {
+      return err("validation", "Avatar must be PNG, JPEG, WebP, or GIF", {
+        fields: { contentType: "Image format required" },
+      });
+    }
+    const fiveMB = 5 * 1024 * 1024;
+    if (parsed.data.sizeBytes > fiveMB) {
+      return err("validation", "Avatar exceeds the 5 MB limit", {
+        fields: { sizeBytes: "Max 5 MB" },
+      });
+    }
+  }
+
   const auth = await authorizeAttachmentParentWrite(
     db,
     ctx,

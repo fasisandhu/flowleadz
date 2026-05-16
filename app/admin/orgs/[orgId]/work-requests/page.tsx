@@ -49,7 +49,7 @@ export default async function AdminWorkRequestsPage({
             key={f}
             href={`/admin/orgs/${orgId}/work-requests?status=${f}`}
             className={`rounded-full border px-3 py-1 ${
-              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700" : "hover:bg-slate-50"
+              filter === f ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950 dark:text-indigo-300" : "hover:bg-slate-50 dark:hover:bg-slate-800"
             }`}
           >
             {f === "all" ? "All" : STATUS_LABELS[f]}
@@ -58,7 +58,7 @@ export default async function AdminWorkRequestsPage({
       </div>
 
       {requests.length === 0 ? (
-        <p className="text-sm text-slate-500">No requests match.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No requests match.</p>
       ) : (
         <div className="space-y-2">
           {requests.map((req) => (
@@ -71,7 +71,7 @@ export default async function AdminWorkRequestsPage({
                   >
                     {req.title}
                   </Link>
-                  <div className="mt-0.5 text-xs text-slate-500">
+                  <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
                   </div>
                 </div>

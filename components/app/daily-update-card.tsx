@@ -40,12 +40,12 @@ export function DailyUpdateCard({
           <Badge variant="secondary">{ACTIVITY_LABELS[update.activityType] ?? update.activityType}</Badge>
           <CardDescription className="text-xs">{logDateLabel}</CardDescription>
         </div>
-        <Link href={href} className="text-sm text-blue-600 hover:underline">
+        <Link href={href} className="text-sm text-blue-600 hover:underline dark:text-indigo-400">
           Open
         </Link>
       </CardHeader>
       <CardContent>
-        <p className="whitespace-pre-wrap text-sm text-slate-700">{preview}</p>
+        <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{preview}</p>
       </CardContent>
     </Card>
   );

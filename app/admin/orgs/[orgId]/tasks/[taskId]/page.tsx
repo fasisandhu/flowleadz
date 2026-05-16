@@ -32,7 +32,7 @@ export default async function AdminTaskDetailPage({
 
   if (!taskR.ok) {
     if (taskR.error.code === "not_found" || taskR.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{taskR.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{taskR.error.message}</p>;
   }
   const task = taskR.data;
 
@@ -47,7 +47,7 @@ export default async function AdminTaskDetailPage({
       {project && (
         <Link
           href={`/admin/orgs/${orgId}/projects/${project.id}`}
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
         >
           <ArrowLeft className="h-3 w-3" /> Back to {project.name}
         </Link>
@@ -59,7 +59,7 @@ export default async function AdminTaskDetailPage({
         action={<TaskStatusPill status={task.status as TaskStatus} />}
       />
 
-      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
+      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
         {task.dueDate && (
           <span>Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
         )}
@@ -97,6 +97,7 @@ export default async function AdminTaskDetailPage({
           canLogTime={true}
           canChangeStatus={true}
           canAttach={true}
+          canComment={true}
         />
       )}
     </div>

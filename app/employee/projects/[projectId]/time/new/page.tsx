@@ -12,7 +12,7 @@ export default async function EmployeeLogTimePage({
   const projectR = await getProjectAction(projectId);
   if (!projectR.ok) {
     if (projectR.error.code === "not_found" || projectR.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{projectR.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{projectR.error.message}</p>;
   }
 
   const tasksR = await listTasksAction({ projectId });

@@ -102,7 +102,7 @@ export function DailyUpdateForm({
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
-        {fieldErrors.body && <p className="text-sm text-red-600">{fieldErrors.body}</p>}
+        {fieldErrors.body && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.body}</p>}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -155,17 +155,17 @@ export function DailyUpdateForm({
           max={todayISO()}
           onChange={(e) => setLogDate(e.target.value)}
         />
-        {fieldErrors.logDate && <p className="text-sm text-red-600">{fieldErrors.logDate}</p>}
+        {fieldErrors.logDate && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.logDate}</p>}
       </div>
 
       {tasks.length > 0 && (
         <div className="space-y-2">
           <Label>Linked tasks (optional)</Label>
-          <div className="max-h-48 space-y-1 overflow-auto rounded-md border bg-white p-2">
+          <div className="max-h-48 space-y-1 overflow-auto rounded-md border bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
             {tasks.map((t) => (
               <label
                 key={t.id}
-                className="flex cursor-pointer items-center gap-2 rounded p-1 text-sm hover:bg-slate-50"
+                className="flex cursor-pointer items-center gap-2 rounded p-1 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 <input
                   type="checkbox"
@@ -176,7 +176,7 @@ export function DailyUpdateForm({
               </label>
             ))}
           </div>
-          {fieldErrors.taskIds && <p className="text-sm text-red-600">{fieldErrors.taskIds}</p>}
+          {fieldErrors.taskIds && <p className="text-sm text-red-600 dark:text-red-400">{fieldErrors.taskIds}</p>}
         </div>
       )}
 

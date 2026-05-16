@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils/cn";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listWorkRequestsAction } from "@/lib/server-actions/work-requests";
+import { EmptyState } from "@/components/app/empty-state";
+import { EmptyRequestsIllustration } from "@/components/app/illustrations/empty-requests";
 
 const STATUS_LABELS: Record<string, string> = {
   submitted: "Submitted",
@@ -43,7 +45,12 @@ export default async function CustomerRequestsPage() {
       </div>
 
       {requests.length === 0 ? (
-        <p className="text-sm text-slate-500">No requests yet.</p>
+        <EmptyState
+          illustration={EmptyRequestsIllustration}
+          title="No work requests yet"
+          description="Click 'New work request' to submit your first one."
+          action={<Link href="/customer/requests/new" className={cn(buttonVariants())}>New work request</Link>}
+        />
       ) : (
         <div className="space-y-2">
           {requests.map((req) => (
@@ -53,7 +60,7 @@ export default async function CustomerRequestsPage() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/customer/requests/${req.id}`}
-                      className="font-medium text-blue-600 hover:underline"
+                      className="font-medium text-blue-600 hover:underline dark:text-indigo-400"
                     >
                       {req.title}
                     </Link>
@@ -62,12 +69,12 @@ export default async function CustomerRequestsPage() {
                     </Badge>
                   </div>
                   {req.description && (
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-600">
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
                       {req.description}
                     </p>
                   )}
                 </div>
-                <div className="text-right text-xs text-slate-500">
+                <div className="text-right text-xs text-slate-500 dark:text-slate-400">
                   <div>Priority: {PRIORITY_LABELS[req.priorityHint] ?? req.priorityHint}</div>
                   <div>{format(new Date(req.createdAt), "MMM d")}</div>
                 </div>

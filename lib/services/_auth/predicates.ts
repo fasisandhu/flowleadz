@@ -179,11 +179,24 @@ export async function requireDailyUpdateRead(
   return ok(true);
 }
 
+export async function requireCommentRead(
+  db: AnyDb,
+  ctx: OrgContext,
+  parentType: "daily_update" | "task",
+  parentId: string,
+): Promise<Result<true>> {
+  if (parentType === "daily_update") {
+    return requireDailyUpdateRead(db, ctx, parentId);
+  }
+  return requireTaskRead(db, ctx, parentId);
+}
+
 export async function requireCommentWrite(
   db: AnyDb,
   ctx: OrgContext,
-  dailyUpdateId: string,
+  parentType: "daily_update" | "task",
+  parentId: string,
 ): Promise<Result<true>> {
-  // Anyone who can READ the parent update can comment on it.
-  return requireDailyUpdateRead(db, ctx, dailyUpdateId);
+  // Anyone who can READ the parent can comment on it.
+  return requireCommentRead(db, ctx, parentType, parentId);
 }

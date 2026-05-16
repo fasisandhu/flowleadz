@@ -20,7 +20,7 @@ export default async function EmployeeProjectDetailPage({
   const projectR = await getProjectAction(projectId);
   if (!projectR.ok) {
     if (projectR.error.code === "not_found" || projectR.error.code === "unauthorized") notFound();
-    return <p className="text-sm text-red-600">{projectR.error.message}</p>;
+    return <p className="text-sm text-red-600 dark:text-red-400">{projectR.error.message}</p>;
   }
   const project = projectR.data;
 
@@ -36,11 +36,11 @@ export default async function EmployeeProjectDetailPage({
       <header className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold">{project.name}</h1>
-          <p className="mt-1 text-sm text-slate-600 capitalize">
+          <p className="mt-1 text-sm text-slate-600 capitalize dark:text-slate-300">
             {project.serviceType.replace("_", " ")}
           </p>
           {project.description && (
-            <p className="mt-3 max-w-prose whitespace-pre-wrap text-sm text-slate-700">
+            <p className="mt-3 max-w-prose whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
               {project.description}
             </p>
           )}
@@ -73,7 +73,7 @@ export default async function EmployeeProjectDetailPage({
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Tasks</h2>
         {tasks.length === 0 ? (
-          <p className="text-sm text-slate-500">No tasks yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No tasks yet.</p>
         ) : (
           <div className="space-y-2">
             {tasks.map((t) => (
@@ -86,7 +86,7 @@ export default async function EmployeeProjectDetailPage({
       <section>
         <h2 className="mb-3 text-lg font-medium">Updates</h2>
         {updates.length === 0 ? (
-          <p className="text-sm text-slate-500">No updates yet.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No updates yet.</p>
         ) : (
           <div className="space-y-3">
             {updates.map((u) => (

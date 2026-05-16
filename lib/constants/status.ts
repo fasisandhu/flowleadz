@@ -39,11 +39,11 @@ export const WORK_REQUEST_STATUS_LABELS: Record<WorkRequestStatus, string> = {
 // The dot indicator is a small bg-* circle; the pill wrapper is the rest.
 
 export const TASK_STATUS_PILL_CLASSES: Record<TaskStatus, string> = {
-  todo: "bg-slate-50 text-slate-700 border-slate-200",
-  in_progress: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  blocked: "bg-amber-50 text-amber-700 border-amber-200",
-  done: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-slate-50 text-slate-500 border-slate-200",
+  todo: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+  in_progress: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800",
+  blocked: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
+  done: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
+  cancelled: "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
 };
 
 export const TASK_STATUS_DOT_CLASSES: Record<TaskStatus, string> = {
@@ -55,8 +55,8 @@ export const TASK_STATUS_DOT_CLASSES: Record<TaskStatus, string> = {
 };
 
 export const WORK_REQUEST_STATUS_PILL_CLASSES: Record<WorkRequestStatus, string> = {
-  submitted: "bg-indigo-50 text-indigo-700 border-indigo-200",
-  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  rejected: "bg-rose-50 text-rose-700 border-rose-200",
-  duplicate: "bg-slate-50 text-slate-500 border-slate-200",
+  submitted: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800",
+  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
+  rejected: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950 dark:text-rose-300 dark:border-rose-800",
+  duplicate: "bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
 };

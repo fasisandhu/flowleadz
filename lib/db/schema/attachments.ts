@@ -7,6 +7,7 @@ export const attachmentParentTypeEnum = pgEnum("attachment_parent_type", [
   "work_request",
   "task",
   "comment",
+  "user_avatar",
 ]);
 
 export const attachmentStatusEnum = pgEnum("attachment_status", ["pending", "ready", "failed"]);
@@ -17,7 +18,7 @@ export const attachments = pgTable(
     id: uuid("id").primaryKey().default(sql`uuidv7()`),
     orgId: text("org_id").notNull().references(() => organizations.id),
     parentType: attachmentParentTypeEnum("parent_type").notNull(),
-    parentId: uuid("parent_id").notNull(),
+    parentId: text("parent_id").notNull(),
     uploadedBy: text("uploaded_by").notNull().references(() => users.id),
     r2Key: text("r2_key").notNull(),
     filename: text("filename").notNull(),

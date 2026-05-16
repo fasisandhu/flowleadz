@@ -27,10 +27,10 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 
 export function TaskListItem({ task }: { task: Task }) {
   return (
-    <div className="flex items-center justify-between rounded-md border bg-white p-3">
+    <div className="flex items-center justify-between rounded-md border bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
       <div className="min-w-0">
         <div className="truncate text-sm font-medium">{task.title}</div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+        <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <Badge variant={STATUS_VARIANT[task.status] ?? "outline"} className="text-xs">
             {STATUS_LABELS[task.status] ?? task.status}
           </Badge>

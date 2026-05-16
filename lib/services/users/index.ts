@@ -10,6 +10,7 @@ import { inviteUserInputSchema, type InviteUserInput, acceptInvitationInputSchem
 import { generateInvitationToken, hashUserPassword } from "./internal";
 
 export type { InviteUserInput, AcceptInvitationInput, ListOrgMembersInput } from "./schemas";
+export { updateProfile, type UpdateProfileInput } from "./profile";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDb = PgDatabase<any, typeof schema>;

@@ -70,7 +70,7 @@ export function AdminNotificationsList({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500">{unreadIds.length} unread</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{unreadIds.length} unread</p>
         <Button
           variant="outline"
           size="sm"
@@ -81,7 +81,7 @@ export function AdminNotificationsList({
         </Button>
       </div>
       {items.length === 0 ? (
-        <p className="text-sm text-slate-500">No notifications.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No notifications.</p>
       ) : (
         <div className="space-y-2">
           {items.map((n) => {
@@ -91,7 +91,7 @@ export function AdminNotificationsList({
               <CardContent className="flex items-start justify-between gap-3 p-4">
                 <div className="min-w-0">
                   <div className="font-medium">{label}</div>
-                  <div className="mt-0.5 text-xs text-slate-500">
+                  <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     {format(new Date(n.createdAt), "MMM d, yyyy h:mm a")}
                   </div>
                 </div>
@@ -104,7 +104,7 @@ export function AdminNotificationsList({
               </CardContent>
             );
             return (
-              <Card key={n.id} className={n.readAt ? "" : "border-blue-300"}>
+              <Card key={n.id} className={n.readAt ? "" : "border-indigo-300 dark:border-indigo-700"}>
                 {href ? (
                   <Link href={href} className="block">
                     {inner}

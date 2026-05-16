@@ -33,7 +33,7 @@ describe("comments.softDeleteComment", () => {
         .returning();
       const [comment] = await db
         .insert(schema.comments)
-        .values({ orgId: org.id, dailyUpdateId: update!.id, userId: author.id, body: "x" })
+        .values({ parentType: "daily_update", parentId: update!.id, userId: author.id, body: "x" })
         .returning();
 
       const r = await softDeleteComment(db, ctxOf(org.id, "employee", author.id), { id: comment!.id });
@@ -60,7 +60,7 @@ describe("comments.softDeleteComment", () => {
         .returning();
       const [comment] = await db
         .insert(schema.comments)
-        .values({ orgId: org.id, dailyUpdateId: update!.id, userId: author.id, body: "x" })
+        .values({ parentType: "daily_update", parentId: update!.id, userId: author.id, body: "x" })
         .returning();
       const r = await softDeleteComment(db, ctxOf(org.id, "admin", admin.id), { id: comment!.id });
       expect(r.ok).toBe(true);
@@ -83,7 +83,7 @@ describe("comments.softDeleteComment", () => {
         .returning();
       const [comment] = await db
         .insert(schema.comments)
-        .values({ orgId: org.id, dailyUpdateId: update!.id, userId: author.id, body: "x" })
+        .values({ parentType: "daily_update", parentId: update!.id, userId: author.id, body: "x" })
         .returning();
       const r = await softDeleteComment(db, ctxOf(org.id, "employee", other.id), { id: comment!.id });
       expect(r.ok).toBe(false);

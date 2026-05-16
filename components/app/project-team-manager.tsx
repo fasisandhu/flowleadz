@@ -66,13 +66,13 @@ export function ProjectTeamManager({
         </Alert>
       )}
       {initialAssignments.length === 0 ? (
-        <p className="text-sm text-slate-500">No one assigned yet.</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">No one assigned yet.</p>
       ) : (
         <ul className="space-y-1">
           {initialAssignments.map((a) => (
             <li
               key={a.userId}
-              className="flex items-center justify-between rounded-md border bg-white px-3 py-2 text-sm"
+              className="flex items-center justify-between rounded-md border bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
             >
               <span>{a.name}</span>
               <Button

@@ -6,6 +6,7 @@ export const attachmentParentTypeEnum = z.enum([
   "work_request",
   "task",
   "comment",
+  "user_avatar",
 ]);
 
 export type AttachmentParentType = z.infer<typeof attachmentParentTypeEnum>;

@@ -8,7 +8,7 @@ export default async function CustomerNewRequestPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="text-2xl font-semibold">New work request</h1>
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-slate-600 dark:text-slate-300">
         Tell us what you need. We&apos;ll route it to the right team.
       </p>
       <WorkRequestForm projects={projects} />

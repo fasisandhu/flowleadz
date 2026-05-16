@@ -183,6 +183,17 @@ export async function cleanupTestData() {
        SELECT id FROM projects WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
      )`,
   );
+  // Delete daily updates (and their joining rows) before projects.
+  // daily_update_tasks cascades from daily_updates; comments cascade via parent_type
+  // links so we delete them explicitly first to be safe.
+  await exec(
+    `DELETE FROM comments WHERE parent_id IN (
+       SELECT id FROM daily_updates WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')
+     )`,
+  );
+  await exec(
+    `DELETE FROM daily_updates WHERE org_id = (SELECT id FROM organizations WHERE slug = 'acme-e2e')`,
+  );
   // Delete work_requests before projects (FK: work_requests.project_id → projects.id).
   await exec(
     `DELETE FROM work_requests WHERE submitted_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.test')`,

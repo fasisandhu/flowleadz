@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { ok, type Result } from "@/lib/services/_result";
@@ -21,6 +21,7 @@ export type ActivityEvent =
       body: string;
       activityType: string;
       visibility: "customer_visible" | "internal_only";
+      canEdit: boolean;
     }
   | {
       kind: "status_change";
@@ -53,7 +54,7 @@ export type ActivityEvent =
       authorName: string;
       authorEmail: string;
       body: string;
-      parentUpdateId: string;
+      parentUpdateId: string | null; // null for task-direct comments
     }
   | {
       kind: "attachment";
@@ -95,23 +96,57 @@ export async function listActivityForTask(
       )
       .innerJoin(schema.users, eq(schema.users.id, schema.dailyUpdates.userId))
       .where(eq(schema.dailyUpdateTasks.taskId, taskId)),
-    db
-      .select({
-        id: schema.comments.id,
-        createdAt: schema.comments.createdAt,
-        authorId: schema.comments.userId,
-        authorName: schema.users.name,
-        authorEmail: schema.users.email,
-        body: schema.comments.body,
-        parentUpdateId: schema.comments.dailyUpdateId,
-      })
-      .from(schema.comments)
-      .innerJoin(
-        schema.dailyUpdateTasks,
-        eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.dailyUpdateId),
-      )
-      .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
-      .where(eq(schema.dailyUpdateTasks.taskId, taskId)),
+    (async () => {
+      // Comments on daily updates linked to this task
+      const updateComments = await db
+        .select({
+          id: schema.comments.id,
+          createdAt: schema.comments.createdAt,
+          authorId: schema.comments.userId,
+          authorName: schema.users.name,
+          authorEmail: schema.users.email,
+          body: schema.comments.body,
+          parentUpdateId: schema.comments.parentId,
+        })
+        .from(schema.comments)
+        .innerJoin(
+          schema.dailyUpdateTasks,
+          and(
+            eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.parentId),
+            eq(schema.comments.parentType, "daily_update"),
+          ),
+        )
+        .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
+        .where(eq(schema.dailyUpdateTasks.taskId, taskId));
+      // Comments posted directly on the task
+      const taskComments = await db
+        .select({
+          id: schema.comments.id,
+          createdAt: schema.comments.createdAt,
+          authorId: schema.comments.userId,
+          authorName: schema.users.name,
+          authorEmail: schema.users.email,
+          body: schema.comments.body,
+          parentUpdateId: sql<null>`null`.as("parent_update_id"),
+        })
+        .from(schema.comments)
+        .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
+        .where(
+          and(
+            eq(schema.comments.parentType, "task"),
+            eq(schema.comments.parentId, taskId),
+          ),
+        );
+      return [...updateComments, ...taskComments] as {
+        id: string;
+        createdAt: Date;
+        authorId: string;
+        authorName: string | null;
+        authorEmail: string;
+        body: string;
+        parentUpdateId: string | null;
+      }[];
+    })(),
     db
       .select({
         id: schema.taskStatusLog.id,
@@ -164,7 +199,10 @@ export async function listActivityForTask(
       ? updates.filter((u) => u.visibility === "customer_visible")
       : updates;
   const visibleUpdateIds = new Set(filteredUpdates.map((u) => u.id));
-  const filteredComments = comments.filter((c) => visibleUpdateIds.has(c.parentUpdateId));
+  // Keep comments on visible updates, plus task-direct comments (parentUpdateId === null)
+  const filteredComments = comments.filter(
+    (c) => c.parentUpdateId === null || visibleUpdateIds.has(c.parentUpdateId),
+  );
 
   const events: ActivityEvent[] = [
     ...filteredUpdates.map((u) => ({
@@ -178,6 +216,7 @@ export async function listActivityForTask(
       body: u.body,
       activityType: u.activityType,
       visibility: u.visibility as "customer_visible" | "internal_only",
+      canEdit: ctx.actor.role === "admin" || u.authorId === ctx.actor.userId,
     })),
     ...filteredComments.map((c) => ({
       kind: "comment" as const,
@@ -188,7 +227,7 @@ export async function listActivityForTask(
       authorName: c.authorName ?? "",
       authorEmail: c.authorEmail,
       body: c.body,
-      parentUpdateId: c.parentUpdateId,
+      parentUpdateId: c.parentUpdateId ?? null,
     })),
     ...statusEvents.map((s) => ({
       kind: "status_change" as const,
@@ -300,26 +339,64 @@ export async function listRecentActivity(
       .where(inArray(schema.dailyUpdateTasks.taskId, taskIds))
       .orderBy(desc(schema.dailyUpdates.createdAt))
       .limit(limit * 2),
-    db
-      .select({
-        id: schema.comments.id,
-        createdAt: schema.comments.createdAt,
-        authorId: schema.comments.userId,
-        authorName: schema.users.name,
-        authorEmail: schema.users.email,
-        body: schema.comments.body,
-        parentUpdateId: schema.comments.dailyUpdateId,
-        taskId: schema.dailyUpdateTasks.taskId,
-      })
-      .from(schema.comments)
-      .innerJoin(
-        schema.dailyUpdateTasks,
-        eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.dailyUpdateId),
-      )
-      .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
-      .where(inArray(schema.dailyUpdateTasks.taskId, taskIds))
-      .orderBy(desc(schema.comments.createdAt))
-      .limit(limit * 2),
+    (async () => {
+      // Comments on daily updates linked to visible tasks
+      const updateComments = await db
+        .select({
+          id: schema.comments.id,
+          createdAt: schema.comments.createdAt,
+          authorId: schema.comments.userId,
+          authorName: schema.users.name,
+          authorEmail: schema.users.email,
+          body: schema.comments.body,
+          parentUpdateId: schema.comments.parentId,
+          taskId: schema.dailyUpdateTasks.taskId,
+        })
+        .from(schema.comments)
+        .innerJoin(
+          schema.dailyUpdateTasks,
+          and(
+            eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.parentId),
+            eq(schema.comments.parentType, "daily_update"),
+          ),
+        )
+        .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
+        .where(inArray(schema.dailyUpdateTasks.taskId, taskIds))
+        .orderBy(desc(schema.comments.createdAt))
+        .limit(limit * 2);
+      // Comments posted directly on visible tasks
+      const taskComments = await db
+        .select({
+          id: schema.comments.id,
+          createdAt: schema.comments.createdAt,
+          authorId: schema.comments.userId,
+          authorName: schema.users.name,
+          authorEmail: schema.users.email,
+          body: schema.comments.body,
+          parentUpdateId: sql<null>`null`.as("parent_update_id"),
+          taskId: schema.comments.parentId,
+        })
+        .from(schema.comments)
+        .innerJoin(schema.users, eq(schema.users.id, schema.comments.userId))
+        .where(
+          and(
+            eq(schema.comments.parentType, "task"),
+            inArray(schema.comments.parentId, taskIds),
+          ),
+        )
+        .orderBy(desc(schema.comments.createdAt))
+        .limit(limit * 2);
+      return [...updateComments, ...taskComments] as {
+        id: string;
+        createdAt: Date;
+        authorId: string;
+        authorName: string | null;
+        authorEmail: string;
+        body: string;
+        parentUpdateId: string | null;
+        taskId: string;
+      }[];
+    })(),
     db
       .select({
         id: schema.taskStatusLog.id,
@@ -381,7 +458,10 @@ export async function listRecentActivity(
       ? updates.filter((u) => u.visibility === "customer_visible")
       : updates;
   const visibleUpdateIds = new Set(filteredUpdates.map((u) => u.id));
-  const filteredComments = comments.filter((c) => visibleUpdateIds.has(c.parentUpdateId));
+  // Keep comments on visible updates, plus task-direct comments (parentUpdateId === null)
+  const filteredComments = comments.filter(
+    (c) => c.parentUpdateId === null || visibleUpdateIds.has(c.parentUpdateId),
+  );
 
   const events: ActivityEvent[] = [
     ...filteredUpdates.map((u) => ({
@@ -395,6 +475,7 @@ export async function listRecentActivity(
       body: u.body,
       activityType: u.activityType,
       visibility: u.visibility as "customer_visible" | "internal_only",
+      canEdit: ctx.actor.role === "admin" || u.authorId === ctx.actor.userId,
     })),
     ...filteredComments.map((c) => ({
       kind: "comment" as const,
@@ -405,7 +486,7 @@ export async function listRecentActivity(
       authorName: c.authorName ?? "",
       authorEmail: c.authorEmail,
       body: c.body,
-      parentUpdateId: c.parentUpdateId,
+      parentUpdateId: c.parentUpdateId ?? null,
     })),
     ...statusEvents.map((s) => ({
       kind: "status_change" as const,
@@ -548,7 +629,8 @@ export async function listTasksWithCardData(
     .innerJoin(schema.users, eq(schema.users.id, schema.taskAssignments.userId))
     .where(inArray(schema.taskAssignments.taskId, taskIds));
 
-  const commentRows = await db
+  // Count comments on daily updates linked to these tasks, plus direct task comments
+  const updateCommentRows = await db
     .select({
       taskId: schema.dailyUpdateTasks.taskId,
       id: schema.comments.id,
@@ -556,9 +638,25 @@ export async function listTasksWithCardData(
     .from(schema.comments)
     .innerJoin(
       schema.dailyUpdateTasks,
-      eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.dailyUpdateId),
+      and(
+        eq(schema.dailyUpdateTasks.dailyUpdateId, schema.comments.parentId),
+        eq(schema.comments.parentType, "daily_update"),
+      ),
     )
     .where(inArray(schema.dailyUpdateTasks.taskId, taskIds));
+  const directTaskCommentRows = await db
+    .select({
+      taskId: schema.comments.parentId,
+      id: schema.comments.id,
+    })
+    .from(schema.comments)
+    .where(
+      and(
+        eq(schema.comments.parentType, "task"),
+        inArray(schema.comments.parentId, taskIds),
+      ),
+    );
+  const commentRows = [...updateCommentRows, ...directTaskCommentRows];
 
   const timeRows = await db
     .select({ taskId: schema.timeEntries.taskId, minutes: schema.timeEntries.minutes })

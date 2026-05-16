@@ -37,7 +37,7 @@ export default function MagicLinkPage() {
           <p className="text-sm">Check {email} for the sign-in link.</p>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
