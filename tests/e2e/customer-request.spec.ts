@@ -24,7 +24,10 @@ test("customer submits a work request and sees it in the list", async ({ page })
   await page.click('button:has-text("Submit request")');
 
   await expect(page).toHaveURL(/\/customer\/requests\/[^/]+$/);
-  await page.waitForLoadState("networkidle");
+  // Don't use waitForLoadState("networkidle") — the RealtimeProvider's
+  // long-lived SSE connection keeps the network busy indefinitely.
+  // Rely on the visibility assertions below, which auto-wait per .toBeVisible's
+  // default timeout (60s in playwright.config.ts).
   await expect(page.getByText("Test request from E2E")).toBeVisible();
   await expect(page.getByText("Submitted — awaiting review")).toBeVisible();
 
