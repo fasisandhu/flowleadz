@@ -2,17 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Pencil } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UpdateEditForm } from "./update-edit-form";
 import { CommentReplyForm } from "./comment-reply-form";
 
+type CommentItemShape = {
+  id: string;
+  createdAt: Date | string;
+  authorId: string;
+  authorName: string;
+  authorEmail: string;
+  body: string;
+};
+
+function relativeTime(d: Date | string) {
+  return formatDistanceToNow(new Date(d), { addSuffix: true });
+}
+
 export function UpdateFeedCard({
   event,
   ts,
   taskHref,
   orgId,
+  comments = [],
 }: {
   event: {
     id: string;
@@ -28,13 +43,15 @@ export function UpdateFeedCard({
   taskHref?: string;
   /** Pass on admin routes so the inline reply uses the right org context. */
   orgId?: string;
+  /** Comments parented to this update — rendered nested below the body. */
+  comments?: CommentItemShape[];
 }) {
   const [editing, setEditing] = useState(false);
   const [replying, setReplying] = useState(false);
 
   if (editing) {
     return (
-      <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
+      <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-none">
         <UpdateEditForm
           updateId={event.id}
           initialBody={event.body}
@@ -47,7 +64,7 @@ export function UpdateFeedCard({
   }
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:shadow-none">
+    <article className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
       <header className="mb-2 flex items-center gap-2">
         <Avatar
           userId={event.authorId}
@@ -81,6 +98,34 @@ export function UpdateFeedCard({
       <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">
         {event.body}
       </p>
+
+      {comments.length > 0 && (
+        <ul className="mt-3 space-y-2 border-l border-slate-200 pl-3 dark:border-slate-700">
+          {comments.map((c) => (
+            <li key={c.id} className="flex items-start gap-2 text-sm">
+              <Avatar
+                userId={c.authorId}
+                name={c.authorName}
+                email={c.authorEmail}
+                size="xs"
+              />
+              <div className="min-w-0 flex-1">
+                <span className="font-medium text-slate-900 dark:text-slate-50">
+                  {c.authorName || c.authorEmail}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {" · "}
+                  {relativeTime(c.createdAt)}
+                </span>
+                <p className="mt-0.5 whitespace-pre-wrap text-slate-700 dark:text-slate-200">
+                  {c.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
       <footer className="mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
         <Button
           type="button"

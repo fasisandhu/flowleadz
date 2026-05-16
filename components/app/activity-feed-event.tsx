@@ -18,21 +18,34 @@ function formatMinutes(m: number): string {
   return `${h}h ${r}m`;
 }
 
+type CommentEvent = Extract<ActivityEvent, { kind: "comment" }>;
+
 export function ActivityFeedEvent({
   event,
   taskHref,
   orgId,
+  comments,
 }: {
   event: ActivityEvent;
   taskHref?: string;
   /** Pass on admin routes so inline reply uses the right org context. */
   orgId?: string;
+  /** Replies on this update, only meaningful when event.kind === "update". */
+  comments?: CommentEvent[];
 }) {
   const ts = relativeTime(event.createdAt);
 
   switch (event.kind) {
     case "update":
-      return <UpdateFeedCard event={event} ts={ts} taskHref={taskHref} orgId={orgId} />;
+      return (
+        <UpdateFeedCard
+          event={event}
+          ts={ts}
+          taskHref={taskHref}
+          orgId={orgId}
+          comments={comments}
+        />
+      );
 
     case "comment":
       return (
@@ -127,12 +140,10 @@ export function ActivityFeedEvent({
 
 export function ActivityDayDivider({ date }: { date: Date | string }) {
   return (
-    <div className="flex items-center gap-3">
-      <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
-      <span className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+    <div className="pt-1">
+      <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
         {format(new Date(date), "MMM d, yyyy")}
       </span>
-      <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
     </div>
   );
 }

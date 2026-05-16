@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Inbox, FolderKanban, Plus, Sparkles } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Inbox, FolderKanban, Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
 import { InviteUserForm } from "@/components/app/invite-user-form";
@@ -32,87 +31,63 @@ export default async function AdminDashboardPage({
         action={<InviteUserForm orgId={orgId} />}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="group relative overflow-hidden transition hover:shadow-md">
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"
-          />
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="rounded-lg bg-amber-50 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">
-                <Inbox className="h-5 w-5" />
-              </div>
-              <span className="text-3xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
-                {pending}
-              </span>
-            </div>
-            <div className="mt-3 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Pending work requests
-            </div>
-            <Link
-              href={`/admin/orgs/${orgId}/work-requests?status=submitted`}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              Review queue
-              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-            </Link>
-          </CardContent>
-        </Card>
-        <Card className="group relative overflow-hidden transition hover:shadow-md">
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500"
-          />
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">
-                <FolderKanban className="h-5 w-5" />
-              </div>
-              <span className="text-3xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
-                {activeProjects}
-              </span>
-            </div>
-            <div className="mt-3 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Active projects
-            </div>
-            <Link
-              href={`/admin/orgs/${orgId}/projects`}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              View all
-              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-            </Link>
-          </CardContent>
-        </Card>
-        <Card className="group relative overflow-hidden transition hover:shadow-md">
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"
-          />
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                <Plus className="h-5 w-5" />
-              </div>
-            </div>
-            <div className="mt-3 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Get started
-            </div>
-            <Link
-              href={`/admin/orgs/${orgId}/projects/new`}
-              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              New project
-              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Link
+          href={`/admin/orgs/${orgId}/work-requests?status=submitted`}
+          className="group flex flex-col rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
+        >
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <Inbox className="h-3.5 w-3.5" />
+            Pending requests
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-semibold tabular-nums tracking-tight text-slate-900 dark:text-slate-50">
+              {pending}
+            </span>
+          </div>
+          <div className="mt-auto pt-3 text-xs text-slate-500 transition group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400">
+            Review queue
+            <ArrowRight className="ml-1 inline h-3 w-3 transition group-hover:translate-x-0.5" />
+          </div>
+        </Link>
+        <Link
+          href={`/admin/orgs/${orgId}/projects`}
+          className="group flex flex-col rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700 dark:hover:bg-slate-800/40"
+        >
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <FolderKanban className="h-3.5 w-3.5" />
+            Active projects
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-2xl font-semibold tabular-nums tracking-tight text-slate-900 dark:text-slate-50">
+              {activeProjects}
+            </span>
+          </div>
+          <div className="mt-auto pt-3 text-xs text-slate-500 transition group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400">
+            View all
+            <ArrowRight className="ml-1 inline h-3 w-3 transition group-hover:translate-x-0.5" />
+          </div>
+        </Link>
+        <Link
+          href={`/admin/orgs/${orgId}/projects/new`}
+          className="group flex flex-col rounded-lg border border-dashed border-slate-300 bg-transparent p-4 transition hover:border-indigo-400 hover:bg-indigo-50/30 dark:border-slate-700 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/20"
+        >
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <Plus className="h-3.5 w-3.5" />
+            New project
+          </div>
+          <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            Start a fresh engagement
+          </div>
+          <div className="mt-auto pt-3 text-xs text-slate-500 transition group-hover:text-indigo-600 dark:text-slate-400 dark:group-hover:text-indigo-400">
+            Create
+            <ArrowRight className="ml-1 inline h-3 w-3 transition group-hover:translate-x-0.5" />
+          </div>
+        </Link>
       </div>
 
       <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-          <Sparkles className="h-4 w-4 text-indigo-500" />
+        <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
           Recent activity
         </h2>
         <ActivityFeed
