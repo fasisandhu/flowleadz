@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,17 +21,20 @@ import {
 } from "@/lib/server-actions/admin/work-requests";
 
 type ProjectOption = { id: string; name: string };
+type TaskOption = { id: string; title: string };
 
 export function WorkRequestReviewBar({
   orgId,
   requestId,
   initialStatus,
   projects,
+  tasks,
 }: {
   orgId: string;
   requestId: string;
   initialStatus: string;
   projects: ProjectOption[];
+  tasks: TaskOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -151,23 +153,41 @@ export function WorkRequestReviewBar({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <h3 className="font-medium">Mark as duplicate</h3>
-          <div className="space-y-2">
-            <Label htmlFor="duplicateTaskId">Canonical task id</Label>
-            <Input
-              id="duplicateTaskId"
-              value={duplicateTaskId}
-              onChange={(e) => setDuplicateTaskId(e.target.value)}
-              placeholder="task-id of the canonical request/task"
-            />
-          </div>
-          <Button type="button" variant="outline" onClick={onMarkDuplicate} disabled={disabled}>
-            {pending ? "Marking…" : "Mark duplicate"}
-          </Button>
-        </CardContent>
-      </Card>
+      {tasks.length > 0 && (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="font-medium">Mark as duplicate</h3>
+            <div className="space-y-2">
+              <Label htmlFor="duplicateTaskId">Canonical task</Label>
+              <Select
+                value={duplicateTaskId}
+                onValueChange={(v) => v && setDuplicateTaskId(v)}
+              >
+                <SelectTrigger id="duplicateTaskId">
+                  <SelectValue placeholder="Pick the existing task this duplicates…">
+                    {(v) => tasks.find((t) => t.id === v)?.title ?? null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {tasks.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onMarkDuplicate}
+              disabled={disabled || !duplicateTaskId}
+            >
+              {pending ? "Marking…" : "Mark duplicate"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

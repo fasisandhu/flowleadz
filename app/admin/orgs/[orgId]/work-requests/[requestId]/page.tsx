@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { adminGetWorkRequestAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
+import { adminListTasksAction } from "@/lib/server-actions/admin/tasks";
 import { WorkRequestReviewBar } from "@/components/app/work-request-review-bar";
 import { AttachmentList } from "@/components/app/attachment-list";
 
@@ -41,8 +42,16 @@ export default async function AdminWorkRequestDetailPage({
   }
   const req = r.data;
 
-  const projectsR = await adminListProjectsAction(orgId, { status: "active" });
+  const [projectsR, tasksR] = await Promise.all([
+    adminListProjectsAction(orgId, { status: "active" }),
+    adminListTasksAction(orgId, {}),
+  ]);
   const projects = projectsR.ok ? projectsR.data.map((p) => ({ id: p.id, name: p.name })) : [];
+  const tasks = tasksR.ok
+    ? tasksR.data
+        .filter((t) => t.id !== req.resolvedTaskId)
+        .map((t) => ({ id: t.id, title: t.title }))
+    : [];
 
   return (
     <article className="mx-auto max-w-3xl space-y-6">
@@ -80,6 +89,7 @@ export default async function AdminWorkRequestDetailPage({
           requestId={requestId}
           initialStatus={req.status}
           projects={projects}
+          tasks={tasks}
         />
       </section>
 
