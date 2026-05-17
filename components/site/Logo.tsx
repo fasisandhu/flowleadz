@@ -1,10 +1,11 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 type Props = { invert?: boolean; size?: number };
 
 export default function Logo({ invert = false, size = 28 }: Props) {
   return (
-    <a
+    <Link
       href="/"
       aria-label="FlowLeadz home"
       style={{ display: 'inline-flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}
@@ -28,6 +29,6 @@ export default function Logo({ invert = false, size = 28 }: Props) {
       >
         flow<span className="gtext">leadz</span>
       </span>
-    </a>
+    </Link>
   );
 }

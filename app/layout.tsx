@@ -25,8 +25,11 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Marketing CRM",
-  description: "Internal CRM for the marketing agency",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.APP_URL ?? "http://localhost:3000",
+  ),
+  title: "FlowLeadz",
+  description: "Done-for-you Meta ads, automation, CRM, and organic growth.",
 };
 
 export default function RootLayout({
