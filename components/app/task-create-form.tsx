@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus } from "lucide-react";
-import { adminCreateTaskAction } from "@/lib/server-actions/admin/tasks";
+import { adminCreateTaskAction, adminAssignTaskAction } from "@/lib/server-actions/admin/tasks";
 
 const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
 const PRIORITY_LABELS: Record<string, string> = {
@@ -25,13 +25,25 @@ const PRIORITY_LABELS: Record<string, string> = {
   urgent: "Urgent",
 };
 
-export function TaskCreateForm({ orgId, projectId }: { orgId: string; projectId: string }) {
+type StaffOption = { id: string; name: string };
+
+export function TaskCreateForm({
+  orgId,
+  projectId,
+  staffOptions = [],
+}: {
+  orgId: string;
+  projectId: string;
+  /** Optional list of staff who can be assigned at create-time. */
+  staffOptions?: StaffOption[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>("normal");
   const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -40,6 +52,7 @@ export function TaskCreateForm({ orgId, projectId }: { orgId: string; projectId:
     setDescription("");
     setPriority("normal");
     setDueDate("");
+    setAssigneeId("");
     setError(null);
   }
 
@@ -61,6 +74,19 @@ export function TaskCreateForm({ orgId, projectId }: { orgId: string; projectId:
       if (!r.ok) {
         setError(r.error.message);
         return;
+      }
+      // Best-effort assign after create. Failure surfaces but doesn't
+      // erase the new task — the admin can still assign from the detail.
+      if (assigneeId) {
+        const ar = await adminAssignTaskAction(orgId, {
+          taskId: r.data.id,
+          userId: assigneeId,
+        });
+        if (!ar.ok) {
+          setError(`Task created but assignment failed: ${ar.error.message}`);
+          router.refresh();
+          return;
+        }
       }
       reset();
       setOpen(false);
@@ -109,7 +135,7 @@ export function TaskCreateForm({ orgId, projectId }: { orgId: string; projectId:
           placeholder="Add context, acceptance criteria, links…"
         />
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="task-priority">Priority</Label>
           <Select
@@ -139,6 +165,28 @@ export function TaskCreateForm({ orgId, projectId }: { orgId: string; projectId:
             onChange={(e) => setDueDate(e.target.value)}
           />
         </div>
+        {staffOptions.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="task-assignee">Assignee (optional)</Label>
+            <Select
+              value={assigneeId}
+              onValueChange={(v) => setAssigneeId(v ?? "")}
+            >
+              <SelectTrigger id="task-assignee">
+                <SelectValue placeholder="Unassigned">
+                  {(v) => staffOptions.find((s) => s.id === v)?.name ?? null}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {staffOptions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       <div className="flex justify-end gap-2">
         <Button

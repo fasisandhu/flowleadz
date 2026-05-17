@@ -127,7 +127,7 @@ export default async function AdminProjectDetailPage({
             {tasks.length}
           </span>
         </div>
-        <TaskCreateForm orgId={orgId} projectId={projectId} />
+        <TaskCreateForm orgId={orgId} projectId={projectId} staffOptions={staffOptions} />
         {tasks.length === 0 ? (
           <p className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
             No tasks yet.

@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { adminGetWorkRequestAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
 import { adminListTasksAction } from "@/lib/server-actions/admin/tasks";
@@ -23,11 +21,11 @@ const STATUS_LABELS: Record<string, string> = {
   duplicate: "Duplicate",
 };
 
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  submitted: "default",
-  accepted: "secondary",
-  rejected: "destructive",
-  duplicate: "outline",
+const STATUS_DOT: Record<string, string> = {
+  submitted: "bg-amber-500",
+  accepted: "bg-emerald-500",
+  rejected: "bg-rose-500",
+  duplicate: "bg-slate-400",
 };
 
 export default async function AdminWorkRequestDetailPage({
@@ -59,36 +57,47 @@ export default async function AdminWorkRequestDetailPage({
     : [];
 
   return (
-    <article className="mx-auto max-w-3xl space-y-6">
-      <header>
-        <div className="mb-2 flex items-center gap-2 text-xs">
-          <Badge variant={STATUS_VARIANT[req.status] ?? "outline"}>
+    <article className="mx-auto max-w-3xl space-y-8">
+      <header className="space-y-3 border-b border-slate-200 pb-5 dark:border-slate-800">
+        <div className="flex items-center gap-2 text-xs">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[req.status] ?? "bg-slate-400"}`}
+            aria-hidden="true"
+          />
+          <span className="font-medium text-slate-700 dark:text-slate-200">
             {STATUS_LABELS[req.status] ?? req.status}
-          </Badge>
+          </span>
           {req.priorityHint && (
-            <Badge variant="outline">
-              Priority: {PRIORITY_LABELS[req.priorityHint] ?? req.priorityHint}
-            </Badge>
+            <>
+              <span className="text-slate-400 dark:text-slate-500">·</span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {PRIORITY_LABELS[req.priorityHint] ?? req.priorityHint} priority
+              </span>
+            </>
           )}
+          <span className="text-slate-400 dark:text-slate-500">·</span>
           <span className="text-slate-500 dark:text-slate-400">
-            Submitted by {req.submitter.name ?? req.submitter.email}
-            {" · "}
+            by {req.submitter.name ?? req.submitter.email}
+          </span>
+          <span className="text-slate-400 dark:text-slate-500">·</span>
+          <span className="text-slate-500 dark:text-slate-400">
             {format(new Date(req.createdAt), "MMM d, yyyy h:mm a")}
           </span>
         </div>
-        <h1 className="text-xl font-semibold">{req.title}</h1>
+        <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-slate-900 dark:text-slate-50">
+          {req.title}
+        </h1>
+        {req.description && (
+          <p className="max-w-prose whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">
+            {req.description}
+          </p>
+        )}
       </header>
 
-      {req.description && (
-        <div className="rounded-md border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-          <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-100">{req.description}</p>
-        </div>
-      )}
-
-      <Separator />
-
-      <section>
-        <h2 className="mb-3 text-lg font-medium">Review</h2>
+      <section className="space-y-3">
+        <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+          Review
+        </h2>
         <WorkRequestReviewBar
           orgId={orgId}
           requestId={requestId}
@@ -99,10 +108,10 @@ export default async function AdminWorkRequestDetailPage({
         />
       </section>
 
-      <Separator />
-
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Attachments</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+          Attachments
+        </h2>
         <AttachmentList parentType="work_request" parentId={requestId} orgId={orgId} />
       </section>
     </article>
