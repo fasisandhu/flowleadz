@@ -63,16 +63,36 @@ export function UpdateFeedCard({
     );
   }
 
+  const clickable = taskHref && !replying;
+
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
-      <header className="mb-2 flex items-center gap-2">
+    <article
+      className={
+        "group relative rounded-lg border border-slate-200 bg-white p-4 transition dark:border-slate-800 dark:bg-slate-900/60 " +
+        (clickable
+          ? "cursor-pointer hover:border-slate-300 hover:shadow-sm dark:hover:border-slate-700"
+          : "hover:border-slate-300 dark:hover:border-slate-700")
+      }
+    >
+      {/* Absolute-positioned overlay link: makes the whole card clickable,
+          while interactive children (buttons, the View-task link) sit on a
+          higher stacking layer via `relative z-10` and intercept clicks. */}
+      {clickable && (
+        <Link
+          href={taskHref}
+          className="absolute inset-0 rounded-lg"
+          aria-label="Open task"
+        />
+      )}
+
+      <header className="relative z-10 mb-2 flex items-center gap-2">
         <Avatar
           userId={event.authorId}
           name={event.authorName}
           email={event.authorEmail}
           size="sm"
         />
-        <span className="text-sm font-medium text-slate-900 dark:text-slate-50">
+        <span className="text-sm font-medium text-slate-900 group-hover:text-indigo-600 dark:text-slate-50 dark:group-hover:text-indigo-400">
           {event.authorName || event.authorEmail}
         </span>
         <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -86,8 +106,11 @@ export function UpdateFeedCard({
         {event.canEdit && (
           <button
             type="button"
-            onClick={() => setEditing(true)}
-            className="ml-auto text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(true);
+            }}
+            className="relative z-10 ml-auto cursor-pointer text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
             aria-label="Edit update"
             title="Edit update"
           >
@@ -100,7 +123,7 @@ export function UpdateFeedCard({
       </p>
 
       {comments.length > 0 && (
-        <ul className="mt-3 space-y-2 border-l border-slate-200 pl-3 dark:border-slate-700">
+        <ul className="relative z-10 mt-3 space-y-2 border-l border-slate-200 pl-3 dark:border-slate-700">
           {comments.map((c) => (
             <li key={c.id} className="flex items-start gap-2 text-sm">
               <Avatar
@@ -126,25 +149,31 @@ export function UpdateFeedCard({
         </ul>
       )}
 
-      <footer className="mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+      <footer className="relative z-10 mt-3 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => setReplying((v) => !v)}
+          className="h-7 cursor-pointer px-2 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            setReplying((v) => !v);
+          }}
         >
           <MessageCircle className="mr-1 h-3 w-3" />
           {replying ? "Cancel" : "Comment"}
         </Button>
         {taskHref && (
-          <Link href={taskHref} className="ml-auto hover:underline">
+          <Link
+            href={taskHref}
+            className="ml-auto text-slate-500 transition hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400"
+          >
             View task →
           </Link>
         )}
       </footer>
       {replying && (
-        <div className="mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+        <div className="relative z-10 mt-3 border-t border-slate-200 pt-3 dark:border-slate-700">
           <CommentReplyForm
             parentType="daily_update"
             parentId={event.id}

@@ -50,9 +50,28 @@ export function DailyUpdateCard({
   const preview = update.body.length > 240 ? `${update.body.slice(0, 240)}…` : update.body;
   const [replyOpen, setReplyOpen] = useState(false);
 
+  const clickable = !replyOpen;
+
   return (
-    <article className="group rounded-lg border border-slate-200 bg-white transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:border-slate-700">
-      <div className="flex items-start justify-between gap-4 px-4 pb-2 pt-3">
+    <article
+      className={
+        "group relative rounded-lg border border-slate-200 bg-white transition dark:border-slate-800 dark:bg-slate-900/40 " +
+        (clickable
+          ? "cursor-pointer hover:border-slate-300 hover:shadow-sm dark:hover:border-slate-700"
+          : "hover:border-slate-300 dark:hover:border-slate-700")
+      }
+    >
+      {/* Absolute-positioned overlay link: makes the whole card clickable
+          to the update detail. Interactive children sit on z-10. */}
+      {clickable && (
+        <Link
+          href={href}
+          className="absolute inset-0 rounded-lg"
+          aria-label="Open update"
+        />
+      )}
+
+      <div className="relative z-10 flex items-start justify-between gap-4 px-4 pb-2 pt-3">
         <div className="flex min-w-0 items-center gap-2 text-xs">
           <span
             className={`h-1.5 w-1.5 rounded-full ${ACTIVITY_DOT[update.activityType] ?? "bg-slate-400"}`}
@@ -78,24 +97,27 @@ export function DailyUpdateCard({
         </Link>
       </div>
       <div className="px-4 pb-3">
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-200">
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 group-hover:text-slate-900 dark:text-slate-200 dark:group-hover:text-slate-50">
           {preview}
         </p>
       </div>
-      <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 dark:border-slate-800">
+      <div className="relative z-10 flex items-center justify-between border-t border-slate-100 px-4 py-2 dark:border-slate-800">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="h-7 px-2 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-          onClick={() => setReplyOpen((v) => !v)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setReplyOpen((v) => !v);
+          }}
         >
           <MessageCircle className="mr-1 h-3 w-3" />
           {replyOpen ? "Cancel" : "Reply"}
         </Button>
       </div>
       {replyOpen && (
-        <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
+        <div className="relative z-10 border-t border-slate-100 px-4 py-3 dark:border-slate-800">
           <CommentReplyForm
             parentType="daily_update"
             parentId={update.id}

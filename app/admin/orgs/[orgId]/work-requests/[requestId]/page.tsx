@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { format } from "date-fns";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { adminGetWorkRequestAction } from "@/lib/server-actions/admin/work-requests";
 import { adminListProjectsAction } from "@/lib/server-actions/admin/projects";
 import { adminListTasksAction } from "@/lib/server-actions/admin/tasks";
@@ -93,6 +95,24 @@ export default async function AdminWorkRequestDetailPage({
           </p>
         )}
       </header>
+
+      {req.status === "accepted" && req.resolvedTaskId && (
+        <section className="space-y-2">
+          <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+            Tracked as
+          </h2>
+          <Link
+            href={`/admin/orgs/${orgId}/tasks/${req.resolvedTaskId}`}
+            className="group flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/50"
+          >
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+            <div className="min-w-0 flex-1 text-sm font-medium text-emerald-900 dark:text-emerald-100">
+              Open the task created from this request
+            </div>
+            <ArrowRight className="h-4 w-4 flex-shrink-0 text-emerald-500 transition group-hover:translate-x-0.5" />
+          </Link>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">

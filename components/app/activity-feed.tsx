@@ -97,7 +97,7 @@ export function ActivityFeed({
                 type="button"
                 onClick={() => setFilter(f.key)}
                 className={
-                  "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition " +
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition " +
                   (active
                     ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-50"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-200")

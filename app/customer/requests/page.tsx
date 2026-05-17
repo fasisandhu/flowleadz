@@ -66,18 +66,22 @@ export default async function CustomerRequestsPage() {
       ) : (
         <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
           {requests.map((req) => (
-            <Link
+            <div
               key={req.id}
-              href={`/customer/requests/${req.id}`}
-              className="group flex items-center gap-4 border-b border-slate-200 bg-white px-4 py-3 transition last:border-b-0 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
+              className="group relative flex items-center gap-4 border-b border-slate-200 bg-white px-4 py-3 transition last:border-b-0 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-slate-800/40"
             >
+              <Link
+                href={`/customer/requests/${req.id}`}
+                aria-label={`Open ${req.title}`}
+                className="absolute inset-0"
+              />
               <span
-                className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${STATUS_DOT[req.status] ?? "bg-slate-400"}`}
+                className={`relative z-10 h-1.5 w-1.5 flex-shrink-0 rounded-full ${STATUS_DOT[req.status] ?? "bg-slate-400"}`}
                 aria-hidden="true"
               />
-              <div className="min-w-0 flex-1">
+              <div className="relative z-10 min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
-                  <span className="truncate text-sm font-medium text-slate-900 dark:text-slate-50">
+                  <span className="truncate text-sm font-medium text-slate-900 group-hover:text-indigo-600 dark:text-slate-50 dark:group-hover:text-indigo-400">
                     {req.title}
                   </span>
                   <span className="text-[11px] uppercase tracking-[0.06em] text-slate-400 dark:text-slate-500">
@@ -96,8 +100,16 @@ export default async function CustomerRequestsPage() {
               <span className="hidden text-xs tabular-nums text-slate-400 dark:text-slate-500 md:inline">
                 {format(new Date(req.createdAt), "MMM d, yyyy")}
               </span>
-              <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400" />
-            </Link>
+              {req.status === "accepted" && req.resolvedTaskId && (
+                <Link
+                  href={`/customer/tasks/${req.resolvedTaskId}`}
+                  className="relative z-10 hidden rounded-md border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-900/60 dark:text-emerald-300 dark:hover:bg-emerald-950/40 sm:inline-flex"
+                >
+                  View task
+                </Link>
+              )}
+              <ArrowRight className="relative z-10 h-3.5 w-3.5 flex-shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400" />
+            </div>
           ))}
         </div>
       )}

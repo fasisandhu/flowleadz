@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { format } from "date-fns";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { getWorkRequestAction } from "@/lib/server-actions/work-requests";
 import { AttachmentList } from "@/components/app/attachment-list";
 import { AttachmentUpload } from "@/components/app/attachment-upload";
@@ -62,6 +64,29 @@ export default async function CustomerRequestDetailPage({
           {req.title}
         </h1>
       </header>
+
+      {req.status === "accepted" && req.resolvedTaskId && (
+        <section className="space-y-2">
+          <h2 className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+            Tracked as
+          </h2>
+          <Link
+            href={`/customer/tasks/${req.resolvedTaskId}`}
+            className="group flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/60 px-4 py-3 transition hover:border-emerald-300 hover:bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/50"
+          >
+            <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-emerald-500" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                View the task we created
+              </div>
+              <div className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                Track progress, see updates, and comment as the work happens.
+              </div>
+            </div>
+            <ArrowRight className="h-4 w-4 flex-shrink-0 text-emerald-500 transition group-hover:translate-x-0.5" />
+          </Link>
+        </section>
+      )}
 
       {req.description && (
         <section className="space-y-2">
