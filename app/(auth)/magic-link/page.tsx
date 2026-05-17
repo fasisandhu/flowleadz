@@ -17,7 +17,7 @@ export default function MagicLinkPage() {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const result = await authClient.signIn.magicLink({ email, callbackURL: "/" });
+    const result = await authClient.signIn.magicLink({ email, callbackURL: "/post-login" });
     setPending(false);
     if (result.error) {
       setError(result.error.message ?? "Failed to send link");

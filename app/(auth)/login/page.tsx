@@ -27,11 +27,11 @@ export default function LoginPage() {
       setError(result.error.message ?? "Sign-in failed");
       return;
     }
-    router.push("/");
+    router.push("/post-login");
   }
 
   async function onGoogle() {
-    await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+    await authClient.signIn.social({ provider: "google", callbackURL: "/post-login" });
   }
 
   return (
