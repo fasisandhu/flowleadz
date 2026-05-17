@@ -10,7 +10,11 @@ export async function listNotificationsAction(input: notifications.ListForUserIn
 
 export async function markNotificationsReadAction(input: notifications.MarkReadInput) {
   const result = await withSessionContext((db, ctx) => notifications.markRead(db, ctx, input));
-  if (result.ok) revalidatePath("/customer/notifications", "page");
+  if (result.ok) {
+    revalidatePath("/customer/notifications", "page");
+    revalidatePath("/employee/notifications", "page");
+    revalidatePath("/admin/orgs", "layout");
+  }
   return result;
 }
 

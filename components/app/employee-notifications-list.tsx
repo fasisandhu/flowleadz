@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { markNotificationsReadAction } from "@/lib/server-actions/notifications";
@@ -36,7 +36,8 @@ function relatedHref(n: NotificationShape): string | null {
 export function EmployeeNotificationsList({ initial }: { initial: NotificationShape[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [items] = useState(initial);
+  // Read from prop so router.refresh() (after Mark all read) reflects.
+  const items = initial;
 
   const unreadIds = items.filter((n) => !n.readAt).map((n) => n.id);
 
