@@ -6,6 +6,7 @@ import { resolvePreferences } from "./internal";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
 import { sendNotificationEmail } from "@/lib/email/dispatch";
+import { notify } from "@/lib/services/realtime/notify";
 
 export type { ListForUserInput, MarkReadInput, UpsertPreferenceInput, EmitInput } from "./schemas";
 
@@ -57,6 +58,14 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
         sentAt: new Date(),
       })),
     );
+
+    for (const row of inAppNotifIds) {
+      try {
+        await notify(db, { kind: "notification", orgId: parsed.orgId, userId: row.userId });
+      } catch {
+        /* best effort */
+      }
+    }
   }
 
   // 2. Email
@@ -104,8 +113,12 @@ export async function emit(db: AnyDb, input: EmitInput): Promise<void> {
 
 type Notification = typeof schema.notifications.$inferSelect;
 
+export type NotificationWithActor = Notification & {
+  actor: { id: string; name: string | null; email: string } | null;
+};
+
 export type ListForUserResult = {
-  notifications: Notification[];
+  notifications: NotificationWithActor[];
   unreadCount: number;
 };
 
@@ -154,7 +167,28 @@ export async function listForUser(
   const [notifications, unreadCountRows] = await Promise.all([rowsQuery, unreadQuery]);
   const unreadCount = Number(unreadCountRows[0]?.value ?? 0);
 
-  return ok({ notifications, unreadCount });
+  // Resolve actor names from each notification's payload.actorId in one query.
+  const actorIds = Array.from(
+    new Set(
+      notifications
+        .map((n) => (n.payload as { actorId?: unknown }).actorId)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+  const actors = actorIds.length
+    ? await db
+        .select({ id: schema.users.id, name: schema.users.name, email: schema.users.email })
+        .from(schema.users)
+        .where(inArray(schema.users.id, actorIds))
+    : [];
+  const actorById = new Map(actors.map((a) => [a.id, a]));
+
+  const enriched: NotificationWithActor[] = notifications.map((n) => {
+    const id = (n.payload as { actorId?: unknown }).actorId;
+    return { ...n, actor: typeof id === "string" ? (actorById.get(id) ?? null) : null };
+  });
+
+  return ok({ notifications: enriched, unreadCount });
 }
 
 export async function markRead(
@@ -180,6 +214,32 @@ export async function markRead(
     .returning({ id: schema.notifications.id });
 
   return ok({ markedCount: result.length });
+}
+
+export type NotificationPreferenceRow = {
+  eventType: string;
+  inAppEnabled: boolean;
+  emailEnabled: boolean;
+};
+
+export async function listMyPreferences(
+  db: AnyDb,
+  ctx: OrgContext,
+): Promise<Result<NotificationPreferenceRow[]>> {
+  const rows = await db
+    .select({
+      eventType: schema.notificationPreferences.eventType,
+      inAppEnabled: schema.notificationPreferences.inAppEnabled,
+      emailEnabled: schema.notificationPreferences.emailEnabled,
+    })
+    .from(schema.notificationPreferences)
+    .where(
+      and(
+        eq(schema.notificationPreferences.orgId, ctx.orgId),
+        eq(schema.notificationPreferences.userId, ctx.actor.userId),
+      ),
+    );
+  return ok(rows);
 }
 
 export async function upsertPreference(

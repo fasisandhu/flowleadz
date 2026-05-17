@@ -20,7 +20,11 @@ export async function adminAcceptWorkRequestAction(orgId: string, input: workReq
   if (r.ok) {
     revalidatePath(`/admin/orgs/${orgId}/work-requests`, "layout");
     revalidatePath(`/admin/orgs/${orgId}/dashboard`, "page");
+    revalidatePath(`/admin/orgs/${orgId}/projects`, "layout");
     revalidatePath("/customer/requests", "layout");
+    revalidatePath("/customer/projects", "layout");
+    revalidatePath("/employee/projects", "layout");
+    revalidatePath("/employee/tasks", "page");
   }
   return r;
 }

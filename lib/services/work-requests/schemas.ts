@@ -15,6 +15,7 @@ export type SubmitWorkRequestInput = z.infer<typeof submitWorkRequestInputSchema
 export const acceptWorkRequestInputSchema = z.object({
   id: idSchema,
   projectId: idSchema.optional(),
+  assigneeUserId: z.string().min(1).optional(),
 });
 export type AcceptWorkRequestInput = z.infer<typeof acceptWorkRequestInputSchema>;
 

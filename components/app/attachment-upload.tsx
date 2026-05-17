@@ -8,7 +8,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Paperclip } from "lucide-react";
 import {
   getUploadUrlAction,
+  adminGetUploadUrlAction,
   confirmAttachmentAction,
+  adminConfirmAttachmentAction,
 } from "@/lib/server-actions/attachments";
 
 const ALLOWED_TYPES = [
@@ -28,9 +30,12 @@ const MAX_BYTES = 50 * 1024 * 1024;
 export function AttachmentUpload({
   parentType,
   parentId,
+  orgId,
 }: {
   parentType: "daily_update" | "work_request" | "task" | "comment";
   parentId: string;
+  /** Pass on admin routes so the action gets the right org context. */
+  orgId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -57,13 +62,16 @@ export function AttachmentUpload({
     const inputEl = e.target;
     startTransition(async () => {
       setProgress("Requesting upload URL…");
-      const urlR = await getUploadUrlAction({
+      const urlInput = {
         parentType,
         parentId,
         filename: file.name,
         contentType: file.type,
         sizeBytes: file.size,
-      });
+      };
+      const urlR = orgId
+        ? await adminGetUploadUrlAction(orgId, urlInput)
+        : await getUploadUrlAction(urlInput);
       if (!urlR.ok) {
         setError(urlR.error.message);
         setProgress(null);
@@ -89,7 +97,10 @@ export function AttachmentUpload({
       }
 
       setProgress("Confirming…");
-      const confirmR = await confirmAttachmentAction({ id: urlR.data.attachmentId });
+      const confirmInput = { id: urlR.data.attachmentId };
+      const confirmR = orgId
+        ? await adminConfirmAttachmentAction(orgId, confirmInput)
+        : await confirmAttachmentAction(confirmInput);
       if (!confirmR.ok) {
         setError(confirmR.error.message);
         setProgress(null);

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,22 +21,29 @@ import {
 } from "@/lib/server-actions/admin/work-requests";
 
 type ProjectOption = { id: string; name: string };
+type TaskOption = { id: string; title: string };
+type StaffOption = { id: string; name: string };
 
 export function WorkRequestReviewBar({
   orgId,
   requestId,
   initialStatus,
   projects,
+  tasks,
+  staff,
 }: {
   orgId: string;
   requestId: string;
   initialStatus: string;
   projects: ProjectOption[];
+  tasks: TaskOption[];
+  staff: StaffOption[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [acceptProjectId, setAcceptProjectId] = useState<string>("");
+  const [acceptAssigneeId, setAcceptAssigneeId] = useState<string>("");
   const [rejectReason, setRejectReason] = useState<string>("");
   const [duplicateTaskId, setDuplicateTaskId] = useState<string>("");
 
@@ -49,6 +55,7 @@ export function WorkRequestReviewBar({
       const r = await adminAcceptWorkRequestAction(orgId, {
         id: requestId,
         projectId: acceptProjectId || undefined,
+        assigneeUserId: acceptAssigneeId || undefined,
       });
       if (!r.ok) setError(r.error.message);
       router.refresh();
@@ -113,7 +120,9 @@ export function WorkRequestReviewBar({
               onValueChange={(v) => v && setAcceptProjectId(v)}
             >
               <SelectTrigger id="acceptProject">
-                <SelectValue placeholder="(leave unassigned)" />
+                <SelectValue placeholder="(leave unassigned)">
+                  {(v) => projects.find((p) => p.id === v)?.name ?? null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {projects.map((p) => (
@@ -124,6 +133,28 @@ export function WorkRequestReviewBar({
               </SelectContent>
             </Select>
           </div>
+          {staff.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="acceptAssignee">Assign to teammate (optional)</Label>
+              <Select
+                value={acceptAssigneeId}
+                onValueChange={(v) => v && setAcceptAssigneeId(v)}
+              >
+                <SelectTrigger id="acceptAssignee">
+                  <SelectValue placeholder="(no assignee)">
+                    {(v) => staff.find((s) => s.id === v)?.name ?? null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {staff.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <Button type="button" onClick={onAccept} disabled={disabled}>
             {pending ? "Accepting…" : "Accept request"}
           </Button>
@@ -149,23 +180,41 @@ export function WorkRequestReviewBar({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <h3 className="font-medium">Mark as duplicate</h3>
-          <div className="space-y-2">
-            <Label htmlFor="duplicateTaskId">Canonical task id</Label>
-            <Input
-              id="duplicateTaskId"
-              value={duplicateTaskId}
-              onChange={(e) => setDuplicateTaskId(e.target.value)}
-              placeholder="task-id of the canonical request/task"
-            />
-          </div>
-          <Button type="button" variant="outline" onClick={onMarkDuplicate} disabled={disabled}>
-            {pending ? "Marking…" : "Mark duplicate"}
-          </Button>
-        </CardContent>
-      </Card>
+      {tasks.length > 0 && (
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h3 className="font-medium">Mark as duplicate</h3>
+            <div className="space-y-2">
+              <Label htmlFor="duplicateTaskId">Canonical task</Label>
+              <Select
+                value={duplicateTaskId}
+                onValueChange={(v) => v && setDuplicateTaskId(v)}
+              >
+                <SelectTrigger id="duplicateTaskId">
+                  <SelectValue placeholder="Pick the existing task this duplicates…">
+                    {(v) => tasks.find((t) => t.id === v)?.title ?? null}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {tasks.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onMarkDuplicate}
+              disabled={disabled || !duplicateTaskId}
+            >
+              {pending ? "Marking…" : "Mark duplicate"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

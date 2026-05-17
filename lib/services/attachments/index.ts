@@ -3,6 +3,7 @@ import type { PgDatabase } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import type { OrgContext } from "@/lib/services/_context";
+import { notify } from "@/lib/services/realtime/notify";
 import { presignPut, presignGet, headObject, deleteObject } from "@/lib/storage/r2-client";
 import { log } from "@/lib/log";
 import {
@@ -152,6 +153,18 @@ export async function confirm(
     .set({ status: "ready", confirmedAt: new Date() })
     .where(eq(schema.attachments.id, parsed.data.id))
     .returning();
+  if (row!.parentType === "task") {
+    try {
+      await notify(db, {
+        kind: "activity",
+        orgId: ctx.orgId,
+        taskId: row!.parentId,
+        eventKind: "attachment",
+      });
+    } catch {
+      /* best effort */
+    }
+  }
   return ok(row!);
 }
 

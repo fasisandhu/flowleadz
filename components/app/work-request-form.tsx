@@ -19,6 +19,12 @@ import { submitWorkRequestAction } from "@/lib/server-actions/work-requests";
 type ProjectOption = { id: string; name: string };
 
 const PRIORITIES = ["low", "normal", "high", "urgent"] as const;
+const PRIORITY_LABELS: Record<string, string> = {
+  low: "Low",
+  normal: "Normal",
+  high: "High",
+  urgent: "Urgent",
+};
 
 export function WorkRequestForm({ projects }: { projects: ProjectOption[] }) {
   const router = useRouter();
@@ -84,7 +90,13 @@ export function WorkRequestForm({ projects }: { projects: ProjectOption[] }) {
         <Label>Project</Label>
         <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "__general")}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v) =>
+                v === "__general"
+                  ? "(General — admin will route)"
+                  : (projects.find((p) => p.id === v)?.name ?? null)
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__general">(General — admin will route)</SelectItem>
@@ -100,12 +112,14 @@ export function WorkRequestForm({ projects }: { projects: ProjectOption[] }) {
         <Label>Priority</Label>
         <Select value={priority} onValueChange={(v) => { if (v) setPriority(v as typeof PRIORITIES[number]); }}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(v) => (typeof v === "string" ? (PRIORITY_LABELS[v] ?? v) : null)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {PRIORITIES.map((p) => (
-              <SelectItem key={p} value={p} className="capitalize">
-                {p}
+              <SelectItem key={p} value={p}>
+                {PRIORITY_LABELS[p]}
               </SelectItem>
             ))}
           </SelectContent>

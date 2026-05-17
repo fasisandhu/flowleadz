@@ -15,5 +15,11 @@ export async function markNotificationsReadAction(input: notifications.MarkReadI
 }
 
 export async function upsertNotificationPreferenceAction(input: notifications.UpsertPreferenceInput) {
-  return withSessionContext((db, ctx) => notifications.upsertPreference(db, ctx, input));
+  const r = await withSessionContext((db, ctx) => notifications.upsertPreference(db, ctx, input));
+  if (r.ok) revalidatePath("/customer/settings/profile", "page");
+  return r;
+}
+
+export async function listMyNotificationPreferencesAction() {
+  return withSessionContext((db, ctx) => notifications.listMyPreferences(db, ctx));
 }

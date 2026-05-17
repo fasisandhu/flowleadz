@@ -99,7 +99,9 @@ export function UpdateEditForm({
             onValueChange={(v) => v && setActivityType(v as (typeof ACTIVITIES)[number])}
           >
             <SelectTrigger id={`edit-activity-${updateId}`}>
-              <SelectValue />
+              <SelectValue>
+                {(v) => (typeof v === "string" ? (ACTIVITY_LABELS[v] ?? v) : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {ACTIVITIES.map((a) => (
@@ -119,7 +121,15 @@ export function UpdateEditForm({
             }
           >
             <SelectTrigger id={`edit-visibility-${updateId}`}>
-              <SelectValue />
+              <SelectValue>
+                {(v) =>
+                  v === "customer_visible"
+                    ? "Visible to customer"
+                    : v === "internal_only"
+                      ? "Internal only"
+                      : null
+                }
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="customer_visible">Visible to customer</SelectItem>

@@ -4,17 +4,19 @@ import { format } from "date-fns";
 import { ArrowLeft } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { TaskStatusPill } from "@/components/ui/status-pill";
-import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/app/page-header";
 import { ActivityFeed } from "@/components/app/activity-feed";
 import { AttachmentList } from "@/components/app/attachment-list";
 import { TaskActionBar } from "@/components/app/task-action-bar";
+import { TaskAssigneeManager } from "@/components/app/task-assignee-manager";
+import { TaskEditForm } from "@/components/app/task-edit-form";
 import {
   adminGetTaskAction,
   adminGetTaskActivityAction,
   adminGetTaskAssigneesAction,
 } from "@/lib/server-actions/admin/tasks";
 import { adminGetProjectAction } from "@/lib/server-actions/admin/projects";
+import { adminListStaffUsersAction } from "@/lib/server-actions/admin/users";
 import type { TaskStatus } from "@/lib/constants/status";
 
 export default async function AdminTaskDetailPage({
@@ -24,10 +26,11 @@ export default async function AdminTaskDetailPage({
 }) {
   const { orgId, taskId } = await params;
 
-  const [taskR, activityR, assigneesR] = await Promise.all([
+  const [taskR, activityR, assigneesR, staffR] = await Promise.all([
     adminGetTaskAction(orgId, taskId),
     adminGetTaskActivityAction(orgId, taskId),
     adminGetTaskAssigneesAction(orgId, taskId),
+    adminListStaffUsersAction(orgId),
   ]);
 
   if (!taskR.ok) {
@@ -41,6 +44,9 @@ export default async function AdminTaskDetailPage({
 
   const assignees = assigneesR.ok ? assigneesR.data : [];
   const activity = activityR.ok ? activityR.data : [];
+  const staffOptions = staffR.ok
+    ? staffR.data.map((u) => ({ id: u.id, name: u.name ?? u.email }))
+    : [];
 
   return (
     <div className="space-y-6">
@@ -56,36 +62,60 @@ export default async function AdminTaskDetailPage({
       <PageHeader
         title={task.title}
         subtitle={task.description ?? undefined}
-        action={<TaskStatusPill status={task.status as TaskStatus} />}
+        action={
+          <div className="flex items-center gap-2">
+            <TaskStatusPill status={task.status as TaskStatus} />
+            <TaskEditForm
+              orgId={orgId}
+              task={{
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                dueDate: task.dueDate,
+                customerVisible: task.customerVisible,
+              }}
+            />
+          </div>
+        }
       />
 
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+        {task.sourceRequester && (
+          <span>
+            Requested by{" "}
+            <span className="text-slate-700 dark:text-slate-200">
+              {task.sourceRequester.name ?? task.sourceRequester.email}
+            </span>
+          </span>
+        )}
         {task.dueDate && (
           <span>Due {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
         )}
-        {assignees.length > 0 && (
-          <div className="flex items-center gap-1">
-            <span>Assigned:</span>
-            {assignees.map((a) => (
-              <span key={a.id} className="inline-flex items-center gap-1">
-                <Avatar userId={a.id} name={a.name} email={a.email} size="xs" />
-                <span>{a.name || a.email}</span>
-              </span>
-            ))}
-          </div>
-        )}
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+        <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Assignees
+        </h2>
+        <TaskAssigneeManager
+          orgId={orgId}
+          taskId={taskId}
+          initialAssignees={assignees}
+          staffOptions={staffOptions}
+        />
       </div>
 
       <Separator />
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Activity</h2>
-        <ActivityFeed events={activity} />
+        <ActivityFeed events={activity} orgId={orgId} />
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Attachments</h2>
-        <AttachmentList parentType="task" parentId={taskId} />
+        <AttachmentList parentType="task" parentId={taskId} orgId={orgId} />
       </section>
 
       {task.projectId && (
@@ -93,6 +123,7 @@ export default async function AdminTaskDetailPage({
           taskId={taskId}
           projectId={task.projectId}
           currentStatus={task.status as TaskStatus}
+          orgId={orgId}
           canPostUpdate={true}
           canLogTime={true}
           canChangeStatus={true}

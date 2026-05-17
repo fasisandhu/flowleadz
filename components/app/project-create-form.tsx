@@ -108,7 +108,9 @@ export function ProjectCreateForm({ orgId }: { orgId: string }) {
             onValueChange={(v) => v && setServiceType(v as typeof SERVICE_TYPES[number])}
           >
             <SelectTrigger id="serviceType">
-              <SelectValue />
+              <SelectValue>
+                {(v) => (typeof v === "string" ? (SERVICE_TYPE_LABELS[v] ?? v) : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {SERVICE_TYPES.map((s) => (

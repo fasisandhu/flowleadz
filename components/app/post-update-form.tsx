@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { createDailyUpdateAction } from "@/lib/server-actions/daily-updates";
+import { createDailyUpdateAction, adminCreateDailyUpdateAction } from "@/lib/server-actions/daily-updates";
 
 const ACTIVITIES = ["planning", "execution", "review", "meeting", "admin", "other"] as const;
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -32,10 +32,13 @@ function todayISO() {
 export function PostUpdateForm({
   projectId,
   taskId,
+  orgId,
   onPosted,
 }: {
   projectId: string;
   taskId: string;
+  /** Pass on admin routes so the action gets the right org context. */
+  orgId?: string;
   onPosted?: () => void;
 }) {
   const router = useRouter();
@@ -56,14 +59,17 @@ export function PostUpdateForm({
       return;
     }
     startTransition(async () => {
-      const r = await createDailyUpdateAction({
+      const input = {
         projectId,
         body,
         activityType,
         visibility,
         logDate: todayISO(),
         taskIds: [taskId],
-      });
+      };
+      const r = orgId
+        ? await adminCreateDailyUpdateAction(orgId, input)
+        : await createDailyUpdateAction(input);
       if (!r.ok) {
         setError(r.error.message);
         return;
@@ -104,7 +110,9 @@ export function PostUpdateForm({
               onValueChange={(v) => v && setActivityType(v as (typeof ACTIVITIES)[number])}
             >
               <SelectTrigger id="update-activity">
-                <SelectValue />
+                <SelectValue>
+                  {(v) => (typeof v === "string" ? (ACTIVITY_LABELS[v] ?? v) : null)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {ACTIVITIES.map((a) => (
@@ -122,7 +130,15 @@ export function PostUpdateForm({
               onValueChange={(v) => v && setVisibility(v as "customer_visible" | "internal_only")}
             >
               <SelectTrigger id="update-visibility">
-                <SelectValue />
+                <SelectValue>
+                  {(v) =>
+                    v === "customer_visible"
+                      ? "Visible to customer"
+                      : v === "internal_only"
+                        ? "Internal only"
+                        : null
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="customer_visible">Visible to customer</SelectItem>

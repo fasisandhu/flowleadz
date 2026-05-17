@@ -2,7 +2,9 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import {
   listAttachmentsForParentAction,
+  adminListAttachmentsForParentAction,
   getAttachmentDownloadUrlAction,
+  adminGetAttachmentDownloadUrlAction,
 } from "@/lib/server-actions/attachments";
 
 function formatBytes(b: number): string {
@@ -14,11 +16,16 @@ function formatBytes(b: number): string {
 export async function AttachmentList({
   parentType,
   parentId,
+  orgId,
 }: {
   parentType: "daily_update" | "work_request" | "task" | "comment";
   parentId: string;
+  /** Pass when rendered inside an /admin/orgs/[orgId]/... route. */
+  orgId?: string;
 }) {
-  const r = await listAttachmentsForParentAction({ parentType, parentId });
+  const r = orgId
+    ? await adminListAttachmentsForParentAction(orgId, { parentType, parentId })
+    : await listAttachmentsForParentAction({ parentType, parentId });
   if (!r.ok) {
     return <p className="text-sm text-red-600 dark:text-red-400">Could not load attachments.</p>;
   }
@@ -30,7 +37,11 @@ export async function AttachmentList({
 
   // Resolve presigned URLs in parallel.
   const urls = await Promise.all(
-    attachments.map((a) => getAttachmentDownloadUrlAction({ id: a.id })),
+    attachments.map((a) =>
+      orgId
+        ? adminGetAttachmentDownloadUrlAction(orgId, { id: a.id })
+        : getAttachmentDownloadUrlAction({ id: a.id }),
+    ),
   );
 
   return (

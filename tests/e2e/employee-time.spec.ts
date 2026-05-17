@@ -42,7 +42,9 @@ test("employee logs time on a task and sees it in My time", async ({ page }) => 
   // Navigate to My time. Hard navigation to ensure a fresh server render.
   await page.goto("/employee/time");
   await expect(page).toHaveURL(/\/employee\/time$/);
-  await page.waitForLoadState("networkidle");
+  // Don't use waitForLoadState("networkidle") — the RealtimeProvider's
+  // long-lived SSE connection keeps the network busy indefinitely. The
+  // .toBeVisible() auto-wait below handles render timing.
   await expect(page.getByText("45m")).toBeVisible();
   await expect(page.getByText("E2E logged time")).toBeVisible();
 });

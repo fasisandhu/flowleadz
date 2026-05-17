@@ -4,6 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireProjectAccess, requireOrgAccess, requireDailyUpdateRead } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
+import { notify } from "@/lib/services/realtime/notify";
 import type { OrgContext } from "@/lib/services/_context";
 import { captureRevision } from "./internal";
 import {
@@ -84,6 +85,21 @@ export async function createDailyUpdate(
         taskId,
       })),
     );
+  }
+
+  if (parsed.data.taskIds && parsed.data.taskIds.length > 0) {
+    for (const taskId of parsed.data.taskIds) {
+      try {
+        await notify(db, {
+          kind: "activity",
+          orgId: ctx.orgId,
+          taskId,
+          eventKind: "update",
+        });
+      } catch {
+        /* best effort */
+      }
+    }
   }
 
   // Fan out: customer users in org (if visible) + assignees of referenced tasks.

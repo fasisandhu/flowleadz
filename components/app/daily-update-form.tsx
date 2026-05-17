@@ -113,7 +113,9 @@ export function DailyUpdateForm({
             onValueChange={(v) => v && setActivityType(v as (typeof ACTIVITIES)[number])}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>
+                {(v) => (typeof v === "string" ? (ACTIVITY_LABELS[v] ?? v) : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {ACTIVITIES.map((a) => (
@@ -132,7 +134,9 @@ export function DailyUpdateForm({
             onValueChange={(v) => v && setVisibility(v as (typeof VISIBILITIES)[number])}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>
+                {(v) => (typeof v === "string" ? (VISIBILITY_LABELS[v] ?? v) : null)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {VISIBILITIES.map((v) => (

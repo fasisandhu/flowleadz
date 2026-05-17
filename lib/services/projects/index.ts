@@ -41,6 +41,7 @@ export async function createProject(
       name: parsed.data.name,
       description: parsed.data.description ?? null,
       serviceType: parsed.data.serviceType,
+      status: "active", // new projects are usable right away; draft is a manual choice via update
       startDate: parsed.data.startDate ?? null,
       endDate: parsed.data.endDate ?? null,
       hourlyRateCents: parsed.data.hourlyRateCents ?? null,

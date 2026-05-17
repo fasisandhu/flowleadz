@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { changeTaskStatusAction } from "@/lib/server-actions/tasks";
+import { adminChangeTaskStatusAction } from "@/lib/server-actions/admin/tasks";
 
 const STATUSES = ["todo", "in_progress", "blocked", "done", "cancelled"] as const;
 
@@ -24,9 +25,12 @@ const STATUS_LABELS: Record<string, string> = {
 export function TaskStatusChanger({
   taskId,
   currentStatus,
+  orgId,
 }: {
   taskId: string;
   currentStatus: typeof STATUSES[number];
+  /** Pass on admin routes so the action gets the right org context. */
+  orgId?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -36,10 +40,13 @@ export function TaskStatusChanger({
     if (!next || next === currentStatus) return;
     setError(null);
     startTransition(async () => {
-      const r = await changeTaskStatusAction({
+      const input = {
         id: taskId,
         toStatus: next as typeof STATUSES[number],
-      });
+      };
+      const r = orgId
+        ? await adminChangeTaskStatusAction(orgId, input)
+        : await changeTaskStatusAction(input);
       if (!r.ok) {
         setError(r.error.message);
       }
@@ -51,7 +58,7 @@ export function TaskStatusChanger({
     <div className="flex flex-col items-end gap-1">
       <Select value={currentStatus} onValueChange={onChange} disabled={pending}>
         <SelectTrigger className="h-8 w-[140px] text-xs">
-          <SelectValue />
+          <SelectValue>{(v) => (typeof v === "string" ? (STATUS_LABELS[v] ?? v) : null)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {STATUSES.map((s) => (

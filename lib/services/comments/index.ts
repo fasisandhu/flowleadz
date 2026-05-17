@@ -4,6 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireCommentWrite, requireCommentRead } from "@/lib/services/_auth/predicates";
 import { emit } from "@/lib/services/notifications";
+import { notify } from "@/lib/services/realtime/notify";
 import type { OrgContext } from "@/lib/services/_context";
 import {
   postCommentInputSchema,
@@ -105,6 +106,36 @@ export async function postComment(
     });
   }
 
+  if (parsed.data.parentType === "task") {
+    try {
+      await notify(db, {
+        kind: "activity",
+        orgId: ctx.orgId,
+        taskId: parsed.data.parentId,
+        eventKind: "comment",
+      });
+    } catch {
+      /* best effort */
+    }
+  } else if (parsed.data.parentType === "daily_update") {
+    const links = await db
+      .select({ taskId: schema.dailyUpdateTasks.taskId })
+      .from(schema.dailyUpdateTasks)
+      .where(eq(schema.dailyUpdateTasks.dailyUpdateId, parsed.data.parentId));
+    for (const link of links) {
+      try {
+        await notify(db, {
+          kind: "activity",
+          orgId: ctx.orgId,
+          taskId: link.taskId,
+          eventKind: "comment",
+        });
+      } catch {
+        /* best effort */
+      }
+    }
+  }
+
   return ok(row!);
 }
 
@@ -177,11 +208,15 @@ export async function softDeleteComment(
   return ok(true);
 }
 
+export type CommentWithAuthor = Comment & {
+  author: { id: string; name: string | null; email: string } | null;
+};
+
 export async function listComments(
   db: AnyDb,
   ctx: OrgContext,
   input: ListCommentsInput,
-): Promise<Result<Comment[]>> {
+): Promise<Result<CommentWithAuthor[]>> {
   const parsed = listCommentsInputSchema.safeParse(input);
   if (!parsed.success) {
     return err("validation", "Invalid input", { fields: zodIssuesToFields(parsed.error.issues) });
@@ -189,8 +224,16 @@ export async function listComments(
   const access = await requireCommentRead(db, ctx, parsed.data.parentType, parsed.data.parentId);
   if (!access.ok) return access;
   const rows = await db
-    .select()
+    .select({
+      comment: schema.comments,
+      author: {
+        id: schema.users.id,
+        name: schema.users.name,
+        email: schema.users.email,
+      },
+    })
     .from(schema.comments)
+    .leftJoin(schema.users, eq(schema.comments.userId, schema.users.id))
     .where(
       and(
         eq(schema.comments.parentType, parsed.data.parentType),
@@ -198,7 +241,7 @@ export async function listComments(
       ),
     )
     .orderBy(asc(schema.comments.createdAt), asc(schema.comments.id));
-  return ok(rows);
+  return ok(rows.map((r) => ({ ...r.comment, author: r.author })));
 }
 
 async function collectParticipants(

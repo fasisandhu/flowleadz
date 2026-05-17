@@ -4,6 +4,7 @@ import * as schema from "@/lib/db/schema";
 import { err, ok, type Result } from "@/lib/services/_result";
 import { requireProjectAccess } from "@/lib/services/_auth/predicates";
 import type { OrgContext } from "@/lib/services/_context";
+import { notify } from "@/lib/services/realtime/notify";
 import {
   logTimeInputSchema,
   type LogTimeInput,
@@ -73,6 +74,16 @@ export async function logTime(
       rateCentsPerHour: rate,
     })
     .returning();
+  try {
+    await notify(db, {
+      kind: "activity",
+      orgId: ctx.orgId,
+      taskId: parsed.data.taskId,
+      eventKind: "time_log",
+    });
+  } catch {
+    /* best effort */
+  }
   return ok(row!);
 }
 

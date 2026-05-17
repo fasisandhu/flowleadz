@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { logTimeAction } from "@/lib/server-actions/time-entries";
+import { logTimeAction, adminLogTimeAction } from "@/lib/server-actions/time-entries";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -14,9 +14,12 @@ function todayISO() {
 
 export function LogTimeInlineForm({
   taskId,
+  orgId,
   onLogged,
 }: {
   taskId: string;
+  /** Pass on admin routes so the action gets the right org context. */
+  orgId?: string;
   onLogged?: () => void;
 }) {
   const router = useRouter();
@@ -35,12 +38,15 @@ export function LogTimeInlineForm({
       return;
     }
     startTransition(async () => {
-      const r = await logTimeAction({
+      const input = {
         taskId,
         minutes: m,
         loggedForDate: date,
         note: note || undefined,
-      });
+      };
+      const r = orgId
+        ? await adminLogTimeAction(orgId, input)
+        : await logTimeAction(input);
       if (!r.ok) {
         setError(r.error.message);
         return;
