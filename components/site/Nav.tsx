@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
@@ -81,6 +82,20 @@ export default function Nav() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <ThemeToggle />
+            <Link
+              href="/login"
+              className="hide-md"
+              style={{
+                fontSize: 13.5,
+                fontWeight: 500,
+                color: 'var(--t-mid)',
+                transition: 'color var(--d-fast) var(--ease-out)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--t-hi)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--t-mid)')}
+            >
+              Sign in
+            </Link>
             <a href="#book" className="btn btn-primary hide-md">
               Book a Call <ArrowRight size={14} />
             </a>
@@ -129,6 +144,13 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
+          <Link
+            href="/login"
+            onClick={() => setOpen(false)}
+            style={{ fontSize: 18, color: 'var(--t-mid)', marginTop: 12 }}
+          >
+            Sign in
+          </Link>
           <a
             href="#book"
             onClick={() => setOpen(false)}

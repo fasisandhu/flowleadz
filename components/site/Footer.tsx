@@ -149,6 +149,40 @@ export default function Footer() {
                 marginBottom: 18,
               }}
             >
+              Customers
+            </h4>
+            <ul
+              style={{
+                listStyle: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 11,
+              }}
+            >
+              <li>
+                <a
+                  href="/login"
+                  style={{ fontSize: 13.5, color: 'var(--t-mid)' }}
+                >
+                  Customer sign in
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4
+              className="mono"
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'var(--ink)',
+                marginBottom: 18,
+              }}
+            >
               Contact
             </h4>
             <ul
