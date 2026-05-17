@@ -47,6 +47,17 @@ public/
 └── ... (existing CRM public)
 ```
 
+## Status
+
+- **Phase A:** ✅ Done. Merged to main at `b46bc06` (2026-05-17). All 10 tasks shipped — see commit `b46bc06` for the squashed file list.
+- **Phase A patches (post-merge, also on main):**
+  - `3b79b2f` `fix(auth)` — added `/post-login` server route; login/magic-link/Google flows now route to role dashboard instead of the now-public `/`.
+  - `367f951` `feat(auth)` — refined login UI (gradient hero, Back to home button) and shared layout across all `(auth)` pages.
+  - `840daa2` `fix` — completed invite acceptance flow (the rewritten `/signup` form consumes the token) + fixed mark-all-read stale UI.
+  - `01573f9` `feat(deploy)` — `pnpm db:seed:admin` one-time first-admin bootstrap script.
+- **Phase B:** ⏳ next. User-driven (Neon provision, Vercel project, DNS swap).
+- **Phase C:** ⏳ after Phase B is stable.
+
 ## Decisions locked
 
 - **Deploy target:** Vercel + Neon Postgres.
@@ -68,9 +79,9 @@ public/
 
 ---
 
-## Phase A — Merge the codebases
+## Phase A — Merge the codebases ✅ DONE
 
-### Task 1: Add the `(site)` route group skeleton
+### Task 1: Add the `(site)` route group skeleton ✅ `63b8509`
 
 **Files:**
 - Create `app/(site)/layout.tsx`
@@ -112,7 +123,7 @@ Commit: `feat(site): scaffold (site) route group, drop CRM root redirect`
 
 ---
 
-### Task 2: Copy public assets
+### Task 2: Copy public assets ✅ `294d807`
 
 ```bash
 cp C:/Users/User/Downloads/flowleadz/public/logo-full.png public/
@@ -123,7 +134,7 @@ Commit: `feat(site): copy FlowLeadz logos to public/`
 
 ---
 
-### Task 3: Copy and namespace agency components
+### Task 3: Copy and namespace agency components ✅ `9579095`
 
 For each file in `C:/Users/User/Downloads/flowleadz/components/`, copy to
 `components/site/`:
@@ -158,7 +169,7 @@ Commit: `feat(site): copy + namespace agency components into components/site/`
 
 ---
 
-### Task 4: Wire up the real landing page
+### Task 4: Wire up the real landing page ✅ `6dc8380`
 
 Replace `app/(site)/page.tsx` placeholder with the full agency landing:
 
@@ -224,7 +235,7 @@ Commit: `feat(site): wire FlowLeadz landing page into (site) route group`
 
 ---
 
-### Task 5: Port agency CSS, scoped under `.site-scope`
+### Task 5: Port agency CSS, scoped under `.site-scope` ✅ `8c6563f`
 
 Open `C:/Users/User/Downloads/flowleadz/app/globals.css` and copy its contents
 into `app/(site)/site.css`. Then transform:
@@ -273,7 +284,7 @@ Commit: `feat(site): port agency CSS, scoped under .site-scope`
 
 ---
 
-### Task 6: Add "Sign in" button to the site Nav
+### Task 6: Add "Sign in" button to the site Nav ✅ `0a56de6`
 
 Open `components/site/Nav.tsx`. Find the right-side of the header (where the
 existing "Get a strategy call" CTA likely lives). Add a "Sign in" link before
@@ -303,7 +314,7 @@ Commit: `feat(site): add "Sign in" link in site Nav + Footer to CRM /login`
 
 ---
 
-### Task 7: Copy agency lib + API routes
+### Task 7: Copy agency lib + API routes ✅ `b01b21e`
 
 ```bash
 mkdir -p lib/site
@@ -329,7 +340,7 @@ Commit: `feat(site): port agency contact + cal-webhook API routes and lib`
 
 ---
 
-### Task 8: Move fonts to `next/font/google`
+### Task 8: Move fonts to `next/font/google` ✅ `34df3d8`
 
 The agency CSS imports Space Grotesk, Inter, JetBrains Mono via Google Fonts
 `@import`. That blocks first paint. Switch to Next's font system in the root
@@ -357,7 +368,7 @@ Commit: `feat(site): swap @import fonts for next/font/google variables`
 
 ---
 
-### Task 9: Env vars
+### Task 9: Env vars ✅ `f1d442e`
 
 Append the agency's vars to `.env.example` (the public template; the user
 sets real values in `.env` locally and on Vercel):
@@ -396,7 +407,7 @@ Commit: `feat(site): add FlowLeadz env vars to .env.example`
 
 ---
 
-### Task 10: Local verification
+### Task 10: Local verification ✅ `389ca35` (also fixed Logo to use next/link, set metadataBase)
 
 ```bash
 pnpm typecheck
@@ -456,6 +467,26 @@ If not already done:
 1. Cloudflare dashboard → R2 → Create bucket: `flowleadz-attachments`.
 2. Generate an API token with read/write on that bucket.
 3. Set the corresponding env vars (see existing CRM `.env.example` for names).
+
+---
+
+### Task 12b: Seed the first admin user
+
+After migrations succeed against the Neon DB, bootstrap the first admin so you
+can sign in once deployed. **Run this once. It refuses to run if any admin
+already exists.** Every subsequent account is created via the in-app Invite
+User flow.
+
+```bash
+DATABASE_URL=<neon prod connection string> \
+ADMIN_EMAIL=you@example.com \
+ADMIN_PASSWORD=<at least 12 chars> \
+ADMIN_NAME="Your Name" \
+pnpm db:seed:admin
+```
+
+The script uses Better Auth's password hasher (`better-auth/crypto`) so the
+stored hash is compatible with the standard sign-in flow.
 
 ---
 
