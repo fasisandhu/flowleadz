@@ -50,7 +50,7 @@ export default async function EmployeeDashboardPage() {
             </div>
             <ActivityFeed
               events={activity}
-              taskHrefFor={(taskId) => `/employee/tasks/${taskId}`}
+              taskHrefBase="/employee/tasks"
             />
           </section>
         </div>

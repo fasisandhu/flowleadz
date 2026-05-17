@@ -102,7 +102,7 @@ export default async function AdminDashboardPage({
             </h2>
             <ActivityFeed
               events={activity}
-              taskHrefFor={(taskId) => `/admin/orgs/${orgId}/tasks/${taskId}`}
+              taskHrefBase={`/admin/orgs/${orgId}/tasks`}
               orgId={orgId}
             />
           </section>

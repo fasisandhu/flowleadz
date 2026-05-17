@@ -58,7 +58,7 @@ export default async function CustomerDashboardPage() {
             </h2>
             <ActivityFeed
               events={activity}
-              taskHrefFor={(taskId) => `/customer/tasks/${taskId}`}
+              taskHrefBase="/customer/tasks"
             />
           </section>
         </div>

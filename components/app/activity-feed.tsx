@@ -23,11 +23,12 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 
 export function ActivityFeed({
   events,
-  taskHrefFor,
+  taskHrefBase,
   orgId,
 }: {
   events: ActivityEvent[];
-  taskHrefFor?: (taskId: string) => string;
+  /** URL prefix the client appends taskId to. Functions can't cross the server→client boundary. */
+  taskHrefBase?: string;
   /** Pass on admin routes so inline reply on update cards uses the right context. */
   orgId?: string;
 }) {
@@ -130,7 +131,7 @@ export function ActivityFeed({
                 <ActivityFeedEvent
                   key={`${e.kind}-${e.id}`}
                   event={e}
-                  taskHref={taskHrefFor?.(e.taskId)}
+                  taskHref={taskHrefBase ? `${taskHrefBase}/${e.taskId}` : undefined}
                   orgId={orgId}
                   comments={
                     e.kind === "update" ? (commentsByUpdate.get(e.id) ?? []) : undefined
