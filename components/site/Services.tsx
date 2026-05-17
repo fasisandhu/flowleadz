@@ -74,7 +74,7 @@ export default function Services() {
                       padding: '5px 12px',
                       background: 'linear-gradient(135deg, var(--blue), var(--purple))',
                       borderRadius: 999,
-                      fontFamily: 'JetBrains Mono, monospace',
+                      fontFamily: 'var(--font-jetbrains-mono), JetBrains Mono, monospace',
                       fontSize: 9,
                       fontWeight: 500,
                       letterSpacing: '0.18em',
