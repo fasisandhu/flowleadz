@@ -7,7 +7,9 @@ import { Client } from "pg";
  * Caller MUST end() the client when the consumer disconnects.
  */
 export function createListenClient(): Client {
-  const connectionString = process.env.DATABASE_URL;
+  // On Neon, LISTEN requires the direct (non-pooled) endpoint.
+  const connectionString =
+    process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL is not set");
   }
