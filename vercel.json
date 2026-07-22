@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm db:migrate && pnpm build",
+  "buildCommand": "pnpm build",
   "crons": [
     { "path": "/api/cron/gc-pending", "schedule": "0 4 * * *" }
   ]
