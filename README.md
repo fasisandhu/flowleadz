@@ -53,16 +53,16 @@ The codebase is **service-layer-first**. Every database query lives in `lib/serv
 
 ```mermaid
 flowchart TD
-    UI["Role-scoped UI<br/>app/customer · app/employee · app/admin"]
-    MW["middleware.ts — session check, role gate"]
-    SA["Server Actions — return Result, never throw"]
-    SVC["lib/services/** — every query scoped by org_id"]
+    UI["Role-scoped UI"]
+    MW["middleware.ts<br/>role gate"]
+    SA["Server Actions<br/>Result, no throw"]
+    SVC["lib/services/**<br/>scoped by org_id"]
     DB[("Postgres + Drizzle")]
-    NOTIFY["pg_notify 'crm_events'"]
-    SSE["/api/events/stream — SSE, filtered by orgId + userId"]
-    AUTH["Better Auth — Drizzle adapter"]
-    MAIL["Resend — React Email templates"]
-    R2["Cloudflare R2 — presigned uploads"]
+    NOTIFY["pg_notify<br/>crm_events"]
+    SSE["/api/events/stream<br/>SSE per user"]
+    AUTH["Better Auth"]
+    MAIL["Resend email"]
+    R2["Cloudflare R2"]
 
     UI --> MW --> SA --> SVC
     SVC --> DB
