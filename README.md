@@ -53,29 +53,28 @@ The codebase is **service-layer-first**. Every database query lives in `lib/serv
 
 ```mermaid
 flowchart TD
-    C["Customer<br/>app/customer"] -->|"submit request"| SA["Server Action<br/>Result&lt;T, AppError&gt;"]
-    A["Admin<br/>app/admin"] -->|"accept / reject / duplicate"| SA
-    E["Employee<br/>app/employee"] -->|"log time, post update"| SA
+    UI["Role-scoped UI<br/>app/customer · app/employee · app/admin"]
+    MW["middleware.ts — session check, role gate"]
+    SA["Server Actions — return Result, never throw"]
+    SVC["lib/services/** — every query scoped by org_id"]
+    DB[("Postgres + Drizzle")]
+    NOTIFY["pg_notify 'crm_events'"]
+    SSE["/api/events/stream — SSE, filtered by orgId + userId"]
+    AUTH["Better Auth — Drizzle adapter"]
+    MAIL["Resend — React Email templates"]
+    R2["Cloudflare R2 — presigned uploads"]
 
-    MW["middleware.ts<br/>role gate → role dashboard"] -.->|guards| C
-    MW -.->|guards| A
-    MW -.->|guards| E
-
-    SA --> SVC["lib/services/**<br/>every query scoped by org_id"]
-    SVC --> DB[("Postgres + Drizzle<br/>work_requests · tasks · projects<br/>time_entries · daily_updates<br/>notifications · attachments")]
-
-    SVC -->|"pg_notify('crm_events')"| PG["Postgres LISTEN/NOTIFY"]
-    PG --> SSE["/api/events/stream<br/>filters by orgId + userId"]
-    SSE -->|"EventSource"| C
-    SSE -->|"EventSource"| A
-    SSE -->|"EventSource"| E
-
-    SVC -->|"per-user channel prefs"| MAIL["Resend<br/>React Email templates"]
-    SVC -->|"presigned URL"| R2["Cloudflare R2"]
-
-    AUTH["Better Auth<br/>Drizzle adapter"] --> DB
+    UI --> MW --> SA --> SVC
+    SVC --> DB
+    SVC --> NOTIFY --> SSE
+    SSE -->|EventSource| UI
+    SVC --> MAIL
+    SVC --> R2
     MW -->|"/api/auth/get-session"| AUTH
+    AUTH --> DB
 ```
+
+Schema highlights: `work_requests` and `work_request_status_log`; `projects` and `project_assignments`; `tasks`, `task_assignments`, and `task_status_log`; `time_entries`; `daily_updates` with `daily_update_tasks` and revisions; `comments` with revisions and reactions; `notifications` with per-user `notification_preferences` and `notification_deliveries`; `attachments`. Every one of them carries `org_id`. Domain-table primary keys are UUIDv7 generated in the database; Better Auth owns its own tables (`users`, `sessions`, `accounts`, `organizations`, `members`, `invitations`) with its text ids.
 
 **Request lifecycle.** A customer submits a work request; the service inserts the request, creates a task with `source = from_request`, links the two, writes a status-log row, and notifies every admin. On accept, the admin's chosen project is synced onto the linked task, an optional assignee is attached, the transition is logged, and the submitter is notified.
 
